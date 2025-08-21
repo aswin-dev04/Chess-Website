@@ -1,0 +1,36 @@
+# ===== C++ / Build artifacts =====
+/engine/build/
+/engine/*.o
+/engine/*.obj
+/engine/*.exe
+/engine/*.out
+/engine/CMakeFiles/
+/engine/CMakeCache.txt
+/engine/*.log
+*.gch
+*.pch
+
+# ===== Node.js / backend =====
+/backend/node_modules/
+/backend/npm-debug.log
+/backend/yarn-error.log
+/backend/.env
+
+# ===== React / frontend =====
+/frontend/node_modules/
+/frontend/build/
+/frontend/.env
+/frontend/.cache/
+
+# ===== IDE / Editor files =====
+*.swp
+*.swo
+*.DS_Store
+*.vscode/
+*.idea/
+
+# ===== Misc =====
+*.log
+*.tmp
+*.bak
+
