@@ -13,6 +13,7 @@ Board::Board() {
   setBlackQueens();
   setWhiteKing();
   setBlackKing();
+  setALLPiecesAggregate();
 }
 
 Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
@@ -30,4 +31,5 @@ Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
   setBlackQueens(bQueens);
   setWhiteKing(wKing);
   setBlackKing(bKing);
+  setALLPiecesAggregate();
 }
