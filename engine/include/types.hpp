@@ -14,7 +14,7 @@ enum PieceType {
   BLACK_BISHOP,
   BLACK_ROOK,
   BLACK_QUEEN,
-  BLACK_KING
+  BLACK_KING,
 };
 
 enum Square {

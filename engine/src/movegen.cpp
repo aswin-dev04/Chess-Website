@@ -1,7 +1,7 @@
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
 
-u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces, bool isWhite) {
+u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
 
   u64 clip_file_H = kingLoc & Tables::clearFile[7];
   u64 clip_file_A = kingLoc & Tables::clearFile[0];
@@ -32,7 +32,7 @@ std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
   u64 enemyPieces =
       isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
   u64 kingLoc = isWhite ? board.getWhiteKing() : board.getBlackKing();
-  u64 kingValid = validMoveBB::kingMoves(kingLoc, ownPieces, isWhite);
+  u64 kingValid = validMoveBB::kingMoves(kingLoc, ownPieces);
 
   // Get king position
   Square kingSquare = Utils::bitboardToSquare(kingLoc);
