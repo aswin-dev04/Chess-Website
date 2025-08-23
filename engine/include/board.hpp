@@ -1,7 +1,6 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
-#include "types.hpp"
 #include <cstdint>
 #include <sys/types.h>
 
@@ -76,20 +75,20 @@ public:
   inline u64 getWhiteQueens() const { return whiteQueens; }
   inline u64 getBlackQueens() const { return blackQueens; }
 
-  inline void setWhiteQueens() { whiteQueens = 0x0000000000000010ULL; }
+  inline void setWhiteQueens() { whiteQueens = 0x0000000000000008ULL; }
   inline void setWhiteQueens(u64 value) { whiteQueens = value; }
 
-  inline void setBlackQueens() { blackQueens = 0x1000000000000000ULL; }
+  inline void setBlackQueens() { blackQueens = 0x0800000000000000ULL; }
   inline void setBlackQueens(u64 value) { blackQueens = value; }
 
   // getters and setters for kings
   inline u64 getWhiteKing() const { return whiteKing; }
   inline u64 getBlackKing() const { return blackKing; }
 
-  inline void setWhiteKing() { whiteKing = 0x0000000000000008ULL; }
+  inline void setWhiteKing() { whiteKing = 0x0000000000000010ULL; }
   inline void setWhiteKing(u64 value) { whiteKing = value; }
 
-  inline void setBlackKing() { blackKing = 0x0800000000000000ULL; }
+  inline void setBlackKing() { blackKing = 0x1000000000000000ULL; }
   inline void setBlackKing(u64 value) { blackKing = value; }
 
   // getters and setters for additional bitboards

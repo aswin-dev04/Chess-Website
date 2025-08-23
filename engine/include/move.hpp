@@ -17,12 +17,21 @@ private:
 
 public:
   // Basic constructor
-  Move(Square from, Square to, PieceType piece, PieceType captured = EMPTY);
+  Move(Square from, Square to, PieceType piece, PieceType captured = EMPTY)
+      : fromSquare(from), toSquare(to), pieceType(piece),
+        capturedPiece(captured), promotionPiece(EMPTY),
+        isCapture(captured != EMPTY), isEnPassant(false),
+        isKingSideCastle(false), isQueenSideCastle(false), isPromotion(false) {}
 
   // Constructor with special move flags
   Move(Square from, Square to, PieceType piece, PieceType captured,
        bool enPassant, bool ksCastle, bool qsCastle, bool promotion,
-       PieceType promoPiece = EMPTY);
+       PieceType promoPiece = EMPTY)
+      : fromSquare(from), toSquare(to), pieceType(piece),
+        capturedPiece(captured), promotionPiece(promoPiece),
+        isCapture(captured != EMPTY || enPassant), isEnPassant(enPassant),
+        isKingSideCastle(ksCastle), isQueenSideCastle(qsCastle),
+        isPromotion(promotion) {}
 
   ~Move() = default;
 
