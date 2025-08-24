@@ -1,7 +1,9 @@
 #include "../include/board.hpp"
 #include "../include/movegen.hpp"
+#include "../include/utils.hpp"
 #include "test.hpp"
 
+// Test 1: King in center
 bool test_king_moves_basic() {
   Board board;
   // Place king in center of board (E4)
@@ -16,10 +18,212 @@ bool test_king_moves_basic() {
   return true;
 }
 
+// Test 2: King in corner
+bool test_king_corner_moves() {
+  Board board;
+  // Clear all pieces and place white king in corner A1
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKing(0x0000000000000001ULL); // A1
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8 - far away
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // King in corner should only have 3 moves: A2, B1, B2
+  ASSERT_EQ(3, moves.size());
+  return true;
+}
+
+// Test 3: King blocked by own pieces
+bool test_king_blocked_by_own_pieces() {
+  Board board;
+  // Place king in center, surround with own pieces
+  board.setWhiteKing(0x0000000010000000ULL); // E4
+  board.setWhitePawns(
+      0x000000003C000000ULL); // D4, E3, F4, G4 (some squares blocked)
+  board.setWhiteKnights(0x0000003C00000000ULL); // D5, E5, F5, G5 (more blocked)
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // Should have fewer than 8 moves due to own pieces blocking
+  ASSERT_LT(8, moves.size());
+  return true;
+}
+
+// Test 4: King can capture enemy pieces
+bool test_king_capture_moves() {
+  Board board;
+  // Place king in center with enemy pieces around
+  board.setWhiteKing(0x0000000010000000ULL); // E4
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000008000000ULL);   // D4 - capturable
+  board.setBlackKnights(0x0000001000000000ULL); // E5 - capturable
+  board.setBlackBishops(0x0000000020000000ULL); // F4 - capturable
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // Should be able to move to empty squares + capture enemy pieces
+  ASSERT_EQ(8, moves.size()); // 5 empty squares + 3 captures
+
+  // Use your capture count utility function
+  int captureCount = Utils::getKingCaptureCount(board, true);
+  ASSERT_EQ(3, captureCount);
+  return true;
+}
+
+// Test 5: King on edge of board
+bool test_king_edge_moves() {
+  Board board;
+  // Place king on edge (E1)
+  board.setWhiteKing(0x0000000000000010ULL); // E1
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // King on edge should have 5 moves
+  ASSERT_EQ(5, moves.size());
+  return true;
+}
+
+// Test 6: Black king moves
+bool test_black_king_moves() {
+  Board board;
+  // Test black king in center
+  board.setWhiteKing(0x0000000000000001ULL); // A1 - far away
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x0000001000000000ULL); // E5
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves =
+      MoveGeneration::generateKingMoves(board, false); // false for black
+
+  // Black king in center should have 8 moves
+  ASSERT_EQ(8, moves.size());
+  return true;
+}
+
+// Test 7: Mixed scenario - own pieces, enemy pieces, empty squares
+bool test_king_mixed_scenario() {
+  Board board;
+  // Complex scenario with various blocking/capture situations
+  board.setWhiteKing(0x0000000010000000ULL);  // E4
+  board.setWhitePawns(0x0000000008000000ULL); // D4 - blocks king
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000020000000ULL);   // F4 - capturable
+  board.setBlackKnights(0x0000000000001000ULL); // E3 - capturable
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // Should have 7 moves (8 total - 1 blocked by own pawn)
+  ASSERT_EQ(7, moves.size());
+  return true;
+}
+
+// Test 8: King with no valid moves (completely surrounded)
+bool test_king_no_moves() {
+  Board board;
+  // Clear all pieces first
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+
+  // Place king at E4 (bit 28)
+  board.setWhiteKing(0x0000000010000000ULL); // E4
+
+  u64 surroundingSquares = 0;
+  surroundingSquares |= (1ULL << 19); // D3
+  surroundingSquares |= (1ULL << 20); // E3
+  surroundingSquares |= (1ULL << 21); // F3
+  surroundingSquares |= (1ULL << 27); // D4
+  surroundingSquares |= (1ULL << 29); // F4
+  surroundingSquares |= (1ULL << 35); // D5
+  surroundingSquares |= (1ULL << 36); // E5
+  surroundingSquares |= (1ULL << 37); // F5
+
+  board.setWhitePawns(surroundingSquares);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateKingMoves(board, true);
+
+  // Should have 0 moves when completely surrounded by own pieces
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
 int main() {
   std::cout << "Running Chess Engine Tests..." << std::endl;
 
   RUN_TEST(test_king_moves_basic);
+  RUN_TEST(test_king_corner_moves);
+  RUN_TEST(test_king_blocked_by_own_pieces);
+  RUN_TEST(test_king_capture_moves);
+  RUN_TEST(test_king_edge_moves);
+  RUN_TEST(test_black_king_moves);
+  RUN_TEST(test_king_mixed_scenario);
+  RUN_TEST(test_king_no_moves);
 
   std::cout << "Tests completed!" << std::endl;
   return 0;

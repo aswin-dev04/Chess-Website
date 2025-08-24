@@ -56,5 +56,7 @@ inline Square makeSquare(int rank, int file) {
 
 // Get piece type at square
 PieceType getPieceTypeAt(Board &board, Square square);
+
+int getKingCaptureCount(Board &board, bool isWhite);
 } // namespace Utils
 #endif

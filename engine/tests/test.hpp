@@ -24,4 +24,41 @@
     std::cout << "FAIL: " << #test_func << std::endl;                          \
   }
 
+#define ASSERT_LT(expected, actual)                                            \
+  if (!((actual) < (expected))) {                                              \
+    std::cout << "FAIL: " << __FILE__ << ":" << __LINE__ << " Expected "       \
+              << (actual) << " to be less than " << (expected) << std::endl;   \
+    return false;                                                              \
+  }
+
+#define ASSERT_GT(expected, actual)                                            \
+  if (!((actual) > (expected))) {                                              \
+    std::cout << "FAIL: " << __FILE__ << ":" << __LINE__ << " Expected "       \
+              << (actual) << " to be greater than " << (expected)              \
+              << std::endl;                                                    \
+    return false;                                                              \
+  }
+
+#define ASSERT_LE(expected, actual)                                            \
+  if (!((actual) <= (expected))) {                                             \
+    std::cout << "FAIL: " << __FILE__ << ":" << __LINE__ << " Expected "       \
+              << (actual) << " to be less than or equal to " << (expected)     \
+              << std::endl;                                                    \
+    return false;                                                              \
+  }
+
+#define ASSERT_GE(expected, actual)                                            \
+  if (!((actual) >= (expected))) {                                             \
+    std::cout << "FAIL: " << __FILE__ << ":" << __LINE__ << " Expected "       \
+              << (actual) << " to be greater than or equal to " << (expected)  \
+              << std::endl;                                                    \
+    return false;                                                              \
+  }
+
+#define ASSERT_NE(expected, actual)                                            \
+  if ((actual) == (expected)) {                                                \
+    std::cout << "FAIL: " << __FILE__ << ":" << __LINE__ << " Expected "       \
+              << (actual) << " to not equal " << (expected) << std::endl;      \
+    return false;                                                              \
+  }
 #endif

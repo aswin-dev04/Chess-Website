@@ -1,17 +1,18 @@
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
+#include <iostream>
 
 u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
 
   u64 clip_file_H = kingLoc & Tables::clearFile[7];
   u64 clip_file_A = kingLoc & Tables::clearFile[0];
 
-  u64 sq_1 = clip_file_H << 7;
+  u64 sq_1 = clip_file_A << 7;
   u64 sq_2 = kingLoc << 8;
   u64 sq_3 = clip_file_H << 9;
   u64 sq_4 = clip_file_H << 1;
 
-  u64 sq_5 = clip_file_A >> 7;
+  u64 sq_5 = clip_file_H >> 7;
   u64 sq_6 = kingLoc >> 8;
   u64 sq_7 = clip_file_A >> 9;
   u64 sq_8 = clip_file_A >> 1;
