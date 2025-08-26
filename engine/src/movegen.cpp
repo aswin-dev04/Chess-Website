@@ -1,6 +1,5 @@
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
-#include <iostream>
 
 u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
 
@@ -55,8 +54,66 @@ std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
       moves.push_back(Move(kingSquare, toSquare, kingPiece, EMPTY, false, false,
                            false, false, EMPTY)); // Normal move
     }
-
     // todo: add castling logic(both king and queenside)
+  }
+  return moves;
+}
+
+u64 validMoveBB::knightMoves(u64 knightLoc, u64 ownPieces) {
+
+  u64 clip_file_H = Tables::clearFile[7]; // Can't move right from H file
+  u64 clip_file_A = Tables::clearFile[0]; // Can't move left from A file
+  u64 clip_file_G = Tables::clearFile[6]; // Can't move 2 right from G file
+  u64 clip_file_B = Tables::clearFile[1]; // Can't move 2 left from B file
+
+  u64 sq_1 = (clip_file_A & clip_file_B & knightLoc) << 6;  // up 1, left 2
+  u64 sq_2 = (clip_file_A & knightLoc) << 15;               // up 2, left 1
+  u64 sq_3 = (clip_file_H & knightLoc) << 17;               // up 2, right 1
+  u64 sq_4 = (clip_file_H & clip_file_G & knightLoc) << 10; // up 1, right 2
+  u64 sq_5 = (clip_file_H & clip_file_G & knightLoc) >> 6;  // down 1, right 2
+  u64 sq_6 = (clip_file_H & knightLoc) >> 15;               // down 2, right 1
+  u64 sq_7 = (clip_file_A & knightLoc) >> 17;               // down 2, left 1
+  u64 sq_8 = (clip_file_A & clip_file_B & knightLoc) >> 10; // down 1, left 2
+
+  u64 knightValid =
+      (sq_1 | sq_2 | sq_3 | sq_4 | sq_5 | sq_6 | sq_7 | sq_8) & ~(ownPieces);
+
+  return knightValid;
+}
+
+std::vector<Move> MoveGeneration::generateKnightMoves(Board &board,
+                                                      bool isWhite) {
+
+  std::vector<Move> moves;
+
+  // relevant bitboards
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 knightLoc = isWhite ? board.getWhiteKnights() : board.getBlackKnights();
+
+  PieceType knightPiece = isWhite ? WHITE_KNIGHT : BLACK_KNIGHT;
+
+  while (knightLoc) {
+    Square currKnightSquare = Utils::popLSB(knightLoc);
+    u64 currKnight = Utils::squareToBitboard(currKnightSquare);
+    u64 knightValid = validMoveBB::knightMoves(currKnight, ownPieces);
+    std::cout << knightValid << std::endl;
+    while (knightValid) {
+      Square toSquare = Utils::popLSB(knightValid);
+      bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;
+      if (isCapture) {
+        // Find what piece we're capturing
+        PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        moves.push_back(Move(currKnightSquare, toSquare, knightPiece,
+                             capturedPiece, false, false, false, false,
+                             EMPTY)); // Capture move
+      } else {
+        moves.push_back(Move(currKnightSquare, toSquare, knightPiece, EMPTY,
+                             false, false, false, false, EMPTY)); // Normal move
+      }
+    }
   }
   return moves;
 }

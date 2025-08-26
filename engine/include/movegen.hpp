@@ -18,6 +18,8 @@ u64 blackPawnMoves(u64 pawnLoc, u64 ownPieces);
 
 class MoveGeneration {
 public:
+  // non-sliding pieces
   static std::vector<Move> generateKingMoves(Board &board, bool isWhite);
+  static std::vector<Move> generateKnightMoves(Board &board, bool isWhite);
 };
 #endif

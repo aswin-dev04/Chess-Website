@@ -1,6 +1,7 @@
 #ifndef MOVE_HPP
 #define MOVE_HPP
 #include "types.hpp"
+#include <iostream>
 
 class Move {
 private:
@@ -56,5 +57,6 @@ public:
   inline bool isSpecialMove() const {
     return isEnPassant || isCastling() || isPromotion;
   }
+  friend std::ostream &operator<<(std::ostream &os, const Move &move);
 };
 #endif
