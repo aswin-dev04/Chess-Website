@@ -12,8 +12,8 @@ u64 rookMoves(u64 rookLoc, u64 ownPieces);
 u64 bishopMoves(u64 bishopLoc, u64 ownPieces);
 u64 queenMoves(u64 queenLoc, u64 ownPieces);
 u64 knightMoves(u64 knightLoc, u64 ownPieces);
-u64 whitePawnMoves(u64 pawnLoc, u64 ownPieces);
-u64 blackPawnMoves(u64 pawnLoc, u64 ownPieces);
+u64 whitePawnMoves(u64 pawnLoc, u64 ownPieces, u64 allPieces, u64 enemyPieces);
+u64 blackPawnMoves(u64 pawnLoc, u64 ownPieces, u64 allPieces, u64 enemyPieces);
 }; // namespace validMoveBB
 
 class MoveGeneration {
@@ -21,5 +21,6 @@ public:
   // non-sliding pieces
   static std::vector<Move> generateKingMoves(Board &board, bool isWhite);
   static std::vector<Move> generateKnightMoves(Board &board, bool isWhite);
+  static std::vector<Move> generatePawnMoves(Board &board, bool isWhite);
 };
 #endif
