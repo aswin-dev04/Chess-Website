@@ -128,8 +128,28 @@ int Utils::getCaptureCount(Board &board, PieceType pieceType, bool isWhite) {
     captureCount = Utils::popcount(allCaptures);
     break;
   }
-  // case WHITE_QUEEN:
-  // case BLACK_QUEEN:
+  case WHITE_QUEEN:
+  case BLACK_QUEEN: {
+    u64 queenLoc = isWhite ? board.getWhiteQueens() : board.getBlackQueens();
+    u64 ownPieces =
+        isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+    u64 enemyPieces =
+        isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+
+    u64 allCaptures = 0;
+    u64 queens = queenLoc; // Copy to iterate through
+
+    while (queens) {
+      Square queenSquare = Utils::popLSB(queens);
+      u64 singleQueen = Utils::squareToBitboard(queenSquare);
+      u64 queenMoveBB =
+          validMoveBB::queenMoves(singleQueen, ownPieces, enemyPieces);
+      allCaptures |= (enemyPieces & queenMoveBB);
+    }
+
+    captureCount = Utils::popcount(allCaptures);
+    break;
+  }
   case WHITE_KING:
   case BLACK_KING: {
     u64 kingLoc = isWhite ? board.getWhiteKing() : board.getBlackKing();

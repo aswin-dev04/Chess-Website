@@ -380,3 +380,43 @@ std::vector<Move> MoveGeneration::generateBishopMoves(Board &board,
   }
   return moves;
 }
+
+u64 validMoveBB::queenMoves(u64 queenLoc, u64 ownPieces, u64 enemyPieces) {
+  return validMoveBB::bishopMoves(queenLoc, ownPieces, enemyPieces) |
+         validMoveBB::rookMoves(queenLoc, ownPieces, enemyPieces);
+}
+
+std::vector<Move> MoveGeneration::generateQueenMoves(Board &board,
+                                                     bool isWhite) {
+  std::vector<Move> moves;
+
+  // relevant bitboards
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 queenLoc = isWhite ? board.getWhiteQueens() : board.getBlackQueens();
+
+  PieceType queenPiece = isWhite ? WHITE_QUEEN : BLACK_QUEEN;
+
+  while (queenLoc) {
+    Square currQueenSquare = Utils::popLSB(queenLoc);
+    u64 currQueen = Utils::squareToBitboard(currQueenSquare);
+    u64 queenValid = validMoveBB::queenMoves(currQueen, ownPieces, enemyPieces);
+    while (queenValid) {
+      Square toSquare = Utils::popLSB(queenValid);
+      bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;
+      if (isCapture) {
+        // Find what piece we're capturing
+        PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        moves.emplace_back(currQueenSquare, toSquare, queenPiece, capturedPiece,
+                           false, false, false, false,
+                           EMPTY); // Capture move
+      } else {
+        moves.emplace_back(currQueenSquare, toSquare, queenPiece, EMPTY, false,
+                           false, false, false, EMPTY); // Normal move
+      }
+    }
+  }
+  return moves;
+}
