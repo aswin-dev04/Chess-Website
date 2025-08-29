@@ -14,7 +14,7 @@ inline Square bitboardToSquare(u64 bitboard) {
 }
 
 // Square to Bitboard conversion
-inline u64 squareToBitboard(Square sq) { return Tables::Piece[sq]; }
+inline u64 squareToBitboard(int sq) { return Tables::Piece[sq]; }
 
 // Bit manipulation helpers
 inline int getLSBIndex(u64 bitboard) { return __builtin_ctzll(bitboard); }

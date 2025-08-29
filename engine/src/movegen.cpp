@@ -48,11 +48,11 @@ std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
     if (isCapture) {
       // Find what piece we're capturing
       PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
-      moves.push_back(Move(kingSquare, toSquare, kingPiece, capturedPiece,
-                           false, false, false, false, EMPTY)); // Capture move
+      moves.emplace_back(kingSquare, toSquare, kingPiece, capturedPiece, false,
+                         false, false, false, EMPTY); // Capture move
     } else {
-      moves.push_back(Move(kingSquare, toSquare, kingPiece, EMPTY, false, false,
-                           false, false, EMPTY)); // Normal move
+      moves.emplace_back(kingSquare, toSquare, kingPiece, EMPTY, false, false,
+                         false, false, EMPTY); // Normal move
     }
     // todo: add castling logic(both king and queenside)
   }
@@ -106,12 +106,12 @@ std::vector<Move> MoveGeneration::generateKnightMoves(Board &board,
       if (isCapture) {
         // Find what piece we're capturing
         PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
-        moves.push_back(Move(currKnightSquare, toSquare, knightPiece,
-                             capturedPiece, false, false, false, false,
-                             EMPTY)); // Capture move
+        moves.emplace_back(currKnightSquare, toSquare, knightPiece,
+                           capturedPiece, false, false, false, false,
+                           EMPTY); // Capture move
       } else {
-        moves.push_back(Move(currKnightSquare, toSquare, knightPiece, EMPTY,
-                             false, false, false, false, EMPTY)); // Normal move
+        moves.emplace_back(currKnightSquare, toSquare, knightPiece, EMPTY,
+                           false, false, false, false, EMPTY); // Normal move
       }
     }
   }
@@ -181,12 +181,105 @@ std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
       if (isCapture) {
         // Find what piece we're capturing
         PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
-        moves.push_back(Move(currPawnSquare, toSquare, pawnPiece, capturedPiece,
-                             false, false, false, false,
-                             EMPTY)); // Capture move
+        moves.emplace_back(currPawnSquare, toSquare, pawnPiece, capturedPiece,
+                           false, false, false, false, EMPTY); // Capture move
       } else {
-        moves.push_back(Move(currPawnSquare, toSquare, pawnPiece, EMPTY, false,
-                             false, false, false, EMPTY)); // Normal move
+        moves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY, false,
+                           false, false, false, EMPTY); // Normal move
+      }
+    }
+  }
+  return moves;
+}
+
+u64 validMoveBB::rookMoves(u64 rookLoc, u64 ownPieces, u64 enemyPieces) {
+
+  u64 moves = 0ULL;
+  u64 blockers = ownPieces | enemyPieces;
+
+  Square sq = Utils::bitboardToSquare(rookLoc);
+
+  int rank = sq / 8;
+  int file = sq % 8;
+
+  // North (increasing rank)
+  for (int r = rank + 1; r < 8; r++) {
+    int targetSq = r * 8 + file;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;         // add move
+    if (blockers & targetBB) { // stop if blocked
+      break;
+    }
+  }
+
+  // South (decreasing rank)
+  for (int r = rank - 1; r >= 0; r--) {
+    int targetSq = r * 8 + file;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  // East (increasing file)
+  for (int f = file + 1; f < 8; f++) {
+    int targetSq = rank * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  // West (decreasing file)
+  for (int f = file - 1; f >= 0; f--) {
+    int targetSq = rank * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  moves &= ~ownPieces;
+
+  return moves;
+}
+
+std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
+                                                    bool isWhite) {
+
+  std::vector<Move> moves;
+
+  // relevant bitboards
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 rookLoc = isWhite ? board.getWhiteRooks() : board.getBlackRooks();
+
+  PieceType rookPiece = isWhite ? WHITE_ROOK : BLACK_ROOK;
+
+  while (rookLoc) {
+    Square currRookSquare = Utils::popLSB(rookLoc);
+    u64 currRook = Utils::squareToBitboard(currRookSquare);
+    u64 rookValid = validMoveBB::rookMoves(currRook, ownPieces, enemyPieces);
+    while (rookValid) {
+      Square toSquare = Utils::popLSB(rookValid);
+      bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;
+      if (isCapture) {
+        // Find what piece we're capturing
+        PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        moves.emplace_back(currRookSquare, toSquare, rookPiece, capturedPiece,
+                           false, false, false, false, EMPTY); // Capture move
+      } else {
+        moves.emplace_back(currRookSquare, toSquare, rookPiece, EMPTY, false,
+                           false, false, false, EMPTY); // Normal move
       }
     }
   }
