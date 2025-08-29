@@ -285,3 +285,98 @@ std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
   }
   return moves;
 }
+
+u64 validMoveBB::bishopMoves(u64 bishopLoc, u64 ownPieces, u64 enemyPieces) {
+
+  u64 moves = 0ULL;
+  u64 blockers = ownPieces | enemyPieces;
+
+  Square sq = Utils::bitboardToSquare(bishopLoc);
+
+  int rank = sq / 8;
+  int file = sq % 8;
+
+  // Northeast (increasing rank and file)
+  for (int r = rank + 1, f = file + 1; r < 8 && f < 8; r++, f++) {
+    int targetSq = r * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  // Northwest (increasing rank and decreasing file)
+  for (int r = rank + 1, f = file - 1; r < 8 && f >= 0; r++, f--) {
+    int targetSq = r * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  // Southeast (decreasing rank and increasing file)
+  for (int r = rank - 1, f = file + 1; r >= 0 && f < 8; r--, f++) {
+    int targetSq = r * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  // Southwest (decreasing rank and decreasing file)
+  for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
+    int targetSq = r * 8 + f;
+    u64 targetBB = Utils::squareToBitboard(targetSq);
+
+    moves |= targetBB;
+    if (blockers & targetBB) {
+      break;
+    }
+  }
+
+  moves &= ~ownPieces;
+
+  return moves;
+}
+
+std::vector<Move> MoveGeneration::generateBishopMoves(Board &board,
+                                                      bool isWhite) {
+  std::vector<Move> moves;
+
+  // relevant bitboards
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 bishopLoc = isWhite ? board.getWhiteBishops() : board.getBlackBishops();
+
+  PieceType bishopPiece = isWhite ? WHITE_BISHOP : BLACK_BISHOP;
+
+  while (bishopLoc) {
+    Square currBishopSquare = Utils::popLSB(bishopLoc);
+    u64 currBishop = Utils::squareToBitboard(currBishopSquare);
+    u64 bishopValid =
+        validMoveBB::bishopMoves(currBishop, ownPieces, enemyPieces);
+    while (bishopValid) {
+      Square toSquare = Utils::popLSB(bishopValid);
+      bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;
+      if (isCapture) {
+        // Find what piece we're capturing
+        PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        moves.emplace_back(currBishopSquare, toSquare, bishopPiece,
+                           capturedPiece, false, false, false, false,
+                           EMPTY); // Capture move
+      } else {
+        moves.emplace_back(currBishopSquare, toSquare, bishopPiece, EMPTY,
+                           false, false, false, false, EMPTY); // Normal move
+      }
+    }
+  }
+  return moves;
+}

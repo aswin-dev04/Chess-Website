@@ -84,8 +84,28 @@ int Utils::getCaptureCount(Board &board, PieceType pieceType, bool isWhite) {
     captureCount = Utils::popcount(allCaptures);
     break;
   }
-  // case WHITE_BISHOP:
-  // case BLACK_BISHOP:
+  case WHITE_BISHOP:
+  case BLACK_BISHOP: {
+    u64 bishopLoc = isWhite ? board.getWhiteBishops() : board.getBlackBishops();
+    u64 ownPieces =
+        isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+    u64 enemyPieces =
+        isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+
+    u64 allCaptures = 0;
+    u64 bishops = bishopLoc; // Copy to iterate through
+
+    while (bishops) {
+      Square bishopSquare = Utils::popLSB(bishops);
+      u64 singleBishop = Utils::squareToBitboard(bishopSquare);
+      u64 bishopMoveBB =
+          validMoveBB::bishopMoves(singleBishop, ownPieces, enemyPieces);
+      allCaptures |= (enemyPieces & bishopMoveBB);
+    }
+
+    captureCount = Utils::popcount(allCaptures);
+    break;
+  }
   case WHITE_ROOK:
   case BLACK_ROOK: {
     u64 rookLoc = isWhite ? board.getWhiteRooks() : board.getBlackRooks();
