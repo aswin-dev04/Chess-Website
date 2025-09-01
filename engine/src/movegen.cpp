@@ -192,7 +192,58 @@ std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
   return moves;
 }
 
+u64 validMoveBB::whitePawnAttacks(u64 pawnLoc) {
+  u64 attacks = 0ULL;
+  // Left attacks (northwest)
+  attacks |= (pawnLoc << 7) & Tables::clearFile[0];
+  // Right attacks (northeast)
+  attacks |= (pawnLoc << 9) & Tables::clearFile[7];
+  return attacks;
+}
+
+u64 validMoveBB::blackPawnAttacks(u64 pawnLoc) {
+  u64 attacks = 0ULL;
+  // Left attacks (southwest)
+  attacks |= (pawnLoc >> 9) & Tables::clearFile[0];
+  // Right attacks (southeast)
+  attacks |= (pawnLoc >> 7) & Tables::clearFile[7];
+  return attacks;
+}
+
+u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
+
+  u64 enemyAttacks = 0ULL;
+
+  u64 ownPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+
+  u64 enemyPawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+  u64 enemyKnights =
+      isWhite ? board.getWhiteKnights() : board.getBlackKnights();
+  u64 enemyBishops =
+      isWhite ? board.getWhiteBishops() : board.getBlackBishops();
+  u64 enemyRooks = isWhite ? board.getWhiteRooks() : board.getBlackRooks();
+  u64 enemyQueens = isWhite ? board.getWhiteQueens() : board.getBlackQueens();
+  u64 enemyKing = isWhite ? board.getWhiteKing() : board.getBlackKing();
+
+  enemyAttacks |= isWhite ? validMoveBB::whitePawnAttacks(enemyPawns)
+                          : validMoveBB::blackPawnAttacks(enemyPawns);
+  enemyAttacks |= validMoveBB::knightMoves(enemyKnights, enemyPieces);
+  enemyAttacks |=
+      validMoveBB::bishopMoves(enemyBishops, enemyPieces, ownPieces);
+  enemyAttacks |= validMoveBB::rookMoves(enemyRooks, enemyPieces, ownPieces);
+  enemyAttacks |= validMoveBB::queenMoves(enemyQueens, enemyPieces, ownPieces);
+  enemyAttacks |= validMoveBB::kingMoves(enemyKing, enemyPieces);
+
+  return enemyAttacks;
+}
+
 u64 validMoveBB::rookMoves(u64 rookLoc, u64 ownPieces, u64 enemyPieces) {
+
+  if (rookLoc == 0ULL)
+    return 0ULL;
 
   u64 moves = 0ULL;
   u64 blockers = ownPieces | enemyPieces;
@@ -287,6 +338,9 @@ std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
 }
 
 u64 validMoveBB::bishopMoves(u64 bishopLoc, u64 ownPieces, u64 enemyPieces) {
+
+  if (bishopLoc == 0)
+    return 0ULL;
 
   u64 moves = 0ULL;
   u64 blockers = ownPieces | enemyPieces;
@@ -416,6 +470,53 @@ std::vector<Move> MoveGeneration::generateQueenMoves(Board &board,
         moves.emplace_back(currQueenSquare, toSquare, queenPiece, EMPTY, false,
                            false, false, false, EMPTY); // Normal move
       }
+    }
+  }
+  return moves;
+}
+
+u64 validMoveBB::kingLegalMoves(Board &board, bool isWhite) {
+
+  // relevant bitboards
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 kingLoc = isWhite ? board.getWhiteKing() : board.getBlackKing();
+  u64 pseudoLegalMoves = validMoveBB::kingMoves(kingLoc, ownPieces);
+  u64 enemyAttacks = allEnemyAttacks(board, !isWhite);
+
+  u64 legalMoves = pseudoLegalMoves & ~enemyAttacks;
+  return legalMoves;
+}
+
+std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
+                                                         bool isWhite) {
+
+  std::vector<Move> moves;
+
+  // relevant bitboards
+  u64 kingLoc = isWhite ? board.getWhiteKing() : board.getBlackKing();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+
+  u64 legalMoves = validMoveBB::kingLegalMoves(board, isWhite);
+
+  // Get king position
+  Square kingSquare = Utils::bitboardToSquare(kingLoc);
+  PieceType kingPiece = isWhite ? WHITE_KING : BLACK_KING;
+
+  while (legalMoves) {
+    Square toSquare = Utils::popLSB(legalMoves);
+    u64 toSquareBitboard = Utils::squareToBitboard(toSquare);
+    bool isCapture = (enemyPieces & toSquareBitboard) != 0;
+
+    if (isCapture) {
+      // Find what piece we're capturing
+      PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+      moves.emplace_back(kingSquare, toSquare, kingPiece, capturedPiece, false,
+                         false, false, false, EMPTY); // Capture move
+    } else {
+      moves.emplace_back(kingSquare, toSquare, kingPiece, EMPTY, false, false,
+                         false, false, EMPTY); // Normal move
     }
   }
   return moves;

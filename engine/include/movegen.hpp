@@ -14,10 +14,18 @@ u64 queenMoves(u64 queenLoc, u64 ownPieces, u64 enemyPieces);
 u64 knightMoves(u64 knightLoc, u64 ownPieces);
 u64 whitePawnMoves(u64 pawnLoc, u64 ownPieces, u64 allPieces, u64 enemyPieces);
 u64 blackPawnMoves(u64 pawnLoc, u64 ownPieces, u64 allPieces, u64 enemyPieces);
+
+u64 whitePawnAttacks(u64 pawnLoc);
+u64 blackPawnAttacks(u64 pawnLoc);
+u64 allEnemyAttacks(Board &board, bool isWhite);
+
+u64 kingLegalMoves(Board &board, bool isWhite);
 }; // namespace validMoveBB
 
 class MoveGeneration {
 public:
+  // These methods only generate Pseudolegal moves
+
   // non-sliding pieces
   static std::vector<Move> generateKingMoves(Board &board, bool isWhite);
   static std::vector<Move> generateKnightMoves(Board &board, bool isWhite);
@@ -27,5 +35,14 @@ public:
   static std::vector<Move> generateRookMoves(Board &board, bool isWhite);
   static std::vector<Move> generateBishopMoves(Board &board, bool isWhite);
   static std::vector<Move> generateQueenMoves(Board &board, bool isWhite);
+
+  // Legal Moves
+
+  static std::vector<Move> generateAllMoves(Board &board, bool isWhite);
+
+  // non-sliding pieces
+  static std::vector<Move> generateKingLegalMoves(Board &board, bool isWhite);
+  static std::vector<Move> generateKnightLegalMoves(Board &board, bool isWhite);
+  static std::vector<Move> generatePawnLegalMoves(Board &board, bool isWhite);
 };
 #endif
