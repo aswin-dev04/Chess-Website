@@ -99,7 +99,6 @@ std::vector<Move> MoveGeneration::generateKnightMoves(Board &board,
     Square currKnightSquare = Utils::popLSB(knightLoc);
     u64 currKnight = Utils::squareToBitboard(currKnightSquare);
     u64 knightValid = validMoveBB::knightMoves(currKnight, ownPieces);
-    std::cout << knightValid << std::endl;
     while (knightValid) {
       Square toSquare = Utils::popLSB(knightValid);
       bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;

@@ -1,7 +1,9 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
+#include "move.hpp"
 #include <cstdint>
+#include <memory>
 #include <sys/types.h>
 
 using u64 = uint64_t;
@@ -24,12 +26,24 @@ private:
   u64 allBlackPieces;
   u64 allPieces;
 
+  std::unique_ptr<Board> prevState;
+
 public:
   Board();
   Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
         u64 bBishops, u64 wRooks, u64 bRooks, u64 wQueens, u64 bQueens,
         u64 wKing, u64 bKing);
   ~Board() = default;
+
+  Board &operator=(const Board &other);
+
+  void makeMove(const Move &move);
+  inline void undoMove() {
+    if (prevState)
+      *this = *prevState;
+  }
+
+  bool isKingChecked(bool isWhite);
 
   // getters and setters for pawns
   inline u64 getWhitePawns() const { return whitePawns; }
