@@ -48,6 +48,9 @@ public:
   static std::vector<Move> generateKnightLegalMoves(Board &board, bool isWhite);
   static std::vector<Move> generatePawnLegalMoves(Board &board, bool isWhite);
 
+  static std::vector<Move> generatePawnPromotionMoves(Board &board, u64 pawnLoc,
+                                                      bool isWhite);
+
   // sliding pieces
   static std::vector<Move> generateRookLegalMoves(Board &board, bool isWhite);
   static std::vector<Move> generateBishopLegalMoves(Board &board, bool isWhite);

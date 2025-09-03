@@ -61,10 +61,10 @@ std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
 
 u64 validMoveBB::knightMoves(u64 knightLoc, u64 ownPieces) {
 
-  u64 clip_file_H = Tables::clearFile[7]; // Can't move right from H file
-  u64 clip_file_A = Tables::clearFile[0]; // Can't move left from A file
-  u64 clip_file_G = Tables::clearFile[6]; // Can't move 2 right from G file
-  u64 clip_file_B = Tables::clearFile[1]; // Can't move 2 left from B file
+  u64 clip_file_H = Tables::clearFile[7];
+  u64 clip_file_A = Tables::clearFile[0];
+  u64 clip_file_G = Tables::clearFile[6];
+  u64 clip_file_B = Tables::clearFile[1];
 
   u64 sq_1 = (clip_file_A & clip_file_B & knightLoc) << 6;  // up 1, left 2
   u64 sq_2 = (clip_file_A & knightLoc) << 15;               // up 2, left 1
@@ -151,6 +151,66 @@ u64 validMoveBB::blackPawnMoves(u64 blackPawns, u64 ownPieces, u64 allPieces,
   return validMoves | validAttacks;
 }
 
+std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
+                                                             u64 pawnLoc,
+                                                             bool isWhite) {
+
+  std::vector<Move> promotionMoves;
+
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+  u64 allPieces = board.getAllPieces();
+
+  PieceType pawnPiece = isWhite ? WHITE_PAWN : BLACK_PAWN;
+
+  while (pawnLoc) {
+    Square currPawnSquare = Utils::popLSB(pawnLoc);
+    u64 currPawn = Utils::squareToBitboard(currPawnSquare);
+    u64 pawnValid = isWhite
+                        ? validMoveBB::whitePawnMoves(currPawn, ownPieces,
+                                                      allPieces, enemyPieces)
+                        : validMoveBB::blackPawnMoves(currPawn, ownPieces,
+                                                      allPieces, enemyPieces);
+    while (pawnValid) {
+      Square toSquare = Utils::popLSB(pawnValid);
+      bool isCapture = (enemyPieces & Utils::squareToBitboard(toSquare)) != 0;
+      if (isCapture) {
+        // Find what piece we're capturing
+        PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        promotionMoves.emplace_back(
+            currPawnSquare, toSquare, pawnPiece, capturedPiece, false, false,
+            false, true, isWhite ? WHITE_KNIGHT : BLACK_KNIGHT); // Capture move
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
+                                    capturedPiece, false, false, false, true,
+                                    isWhite ? WHITE_BISHOP : BLACK_BISHOP);
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
+                                    capturedPiece, false, false, false, true,
+                                    isWhite ? WHITE_ROOK : BLACK_ROOK);
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
+                                    capturedPiece, false, false, false, true,
+                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
+
+      } else {
+        promotionMoves.emplace_back(
+            currPawnSquare, toSquare, pawnPiece, EMPTY, false, false, false,
+            true, isWhite ? WHITE_KNIGHT : BLACK_KNIGHT); // Normal move
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
+                                    false, false, false, true,
+                                    isWhite ? WHITE_BISHOP : BLACK_BISHOP);
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
+                                    false, false, false, true,
+                                    isWhite ? WHITE_ROOK : BLACK_ROOK);
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
+                                    false, false, false, true,
+                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
+      }
+    }
+  }
+  return promotionMoves;
+}
+
 std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
                                                     bool isWhite) {
 
@@ -161,7 +221,19 @@ std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
       isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
   u64 enemyPieces =
       isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
-  u64 pawnLoc = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+
+  u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+  u64 promoPawns =
+      isWhite ? pawns & Tables::maskRank[6] : pawns & Tables::maskRank[1];
+
+  if (promoPawns != 0) {
+    std::vector<Move> promotionMoves =
+        generatePawnPromotionMoves(board, promoPawns, isWhite);
+    moves.insert(moves.end(), promotionMoves.begin(), promotionMoves.end());
+  }
+
+  u64 pawnLoc = pawns & ~promoPawns;
+
   u64 allPieces = board.getAllPieces();
 
   PieceType pawnPiece = isWhite ? WHITE_PAWN : BLACK_PAWN;
