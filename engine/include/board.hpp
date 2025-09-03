@@ -45,6 +45,8 @@ public:
 
   bool isKingChecked(bool isWhite);
 
+  int getAttackersCount(bool isWhite);
+
   // getters and setters for pawns
   inline u64 getWhitePawns() const { return whitePawns; }
   inline u64 getBlackPawns() const { return blackPawns; }

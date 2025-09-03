@@ -232,3 +232,50 @@ void Board::makeMove(const Move &move) {
 
   setALLPiecesAggregate();
 }
+
+int Board::getAttackersCount(bool isWhite) {
+
+  u64 kingLoc = isWhite ? getWhiteKing() : getBlackKing();
+
+  u64 enemyPawnAttacks = isWhite
+                             ? validMoveBB::blackPawnAttacks(getBlackPawns())
+                             : validMoveBB::whitePawnAttacks(getWhitePawns());
+
+  u64 enemyKnightAttacks =
+      isWhite
+          ? validMoveBB::knightMoves(getBlackKnights(), getAllBlackPieces())
+          : validMoveBB::knightMoves(getWhiteKnights(), getAllWhitePieces());
+
+  u64 enemyBishopAttacks =
+      isWhite ? validMoveBB::bishopMoves(getBlackBishops(), getAllBlackPieces(),
+                                         getAllWhitePieces())
+              : validMoveBB::bishopMoves(getWhiteBishops(), getAllWhitePieces(),
+                                         getAllBlackPieces());
+
+  u64 enemyRookAttacks =
+      isWhite ? validMoveBB::rookMoves(getBlackRooks(), getAllBlackPieces(),
+                                       getAllWhitePieces())
+              : validMoveBB::rookMoves(getWhiteRooks(), getAllWhitePieces(),
+                                       getAllBlackPieces());
+
+  u64 enemyQueenAttacks =
+      isWhite ? validMoveBB::queenMoves(getBlackQueens(), getAllBlackPieces(),
+                                        getAllWhitePieces())
+              : validMoveBB::queenMoves(getWhiteQueens(), getAllWhitePieces(),
+                                        getAllBlackPieces());
+
+  int count = 0;
+
+  if (kingLoc & enemyPawnAttacks)
+    count++;
+  if (kingLoc & enemyKnightAttacks)
+    count++;
+  if (kingLoc & enemyBishopAttacks)
+    count++;
+  if (kingLoc & enemyRookAttacks)
+    count++;
+  if (kingLoc & enemyQueenAttacks)
+    count++;
+
+  return count;
+}

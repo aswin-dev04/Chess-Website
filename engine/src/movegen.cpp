@@ -602,3 +602,47 @@ std::vector<Move> MoveGeneration::generateQueenLegalMoves(Board &board,
   }
   return legalQueenMoves;
 }
+
+std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
+
+  std::vector<Move> allMoves;
+
+  std::vector<Move> pawnMoves = generatePawnLegalMoves(board, isWhite);
+  std::vector<Move> knightMoves = generateKnightLegalMoves(board, isWhite);
+  std::vector<Move> bishopMoves = generateBishopLegalMoves(board, isWhite);
+  std::vector<Move> rookMoves = generateRookLegalMoves(board, isWhite);
+  std::vector<Move> queenMoves = generateQueenLegalMoves(board, isWhite);
+  std::vector<Move> kingMoves = generateKingLegalMoves(board, isWhite);
+
+  // Append all to one vector
+  allMoves.insert(allMoves.end(), pawnMoves.begin(), pawnMoves.end());
+  allMoves.insert(allMoves.end(), knightMoves.begin(), knightMoves.end());
+  allMoves.insert(allMoves.end(), bishopMoves.begin(), bishopMoves.end());
+  allMoves.insert(allMoves.end(), rookMoves.begin(), rookMoves.end());
+  allMoves.insert(allMoves.end(), queenMoves.begin(), queenMoves.end());
+  allMoves.insert(allMoves.end(), kingMoves.begin(), kingMoves.end());
+
+  if (board.isKingChecked(isWhite)) {
+    if (board.getAttackersCount(isWhite) > 1)
+      return kingMoves;
+    return generateLegalMovesWhileInCheck(board, isWhite, allMoves);
+  }
+
+  return allMoves;
+}
+
+std::vector<Move>
+MoveGeneration::generateLegalMovesWhileInCheck(Board &board, bool isWhite,
+                                               std::vector<Move> allMoves) {
+
+  std::vector<Move> legalMoves;
+
+  for (const Move &move : allMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalMoves;
+}

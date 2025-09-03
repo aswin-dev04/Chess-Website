@@ -70,32 +70,40 @@ void printMoves(const std::vector<Move> &moves) {
 }
 
 int main() {
-  Board board;
+
+  u64 wpawns = 0ULL;
+  u64 wknights = 0x80000ULL;      // D3
+  u64 wbishops = 0x8000000000ULL; // H5
+  u64 wrooks = 0ULL;
+  u64 wqueens = 0ULL;
+  u64 wking = 0x10000000ULL; // E4
+
+  u64 bpawns = 0ULL;
+  u64 bknights = 0ULL;
+  u64 bbishops = 0ULL;
+  u64 brooks = 0ULL;
+  u64 bqueens = 0x1000000000000000ULL; // E8
+  u64 bking = 0ULL;
+
+  Board board = Board(wpawns, bpawns, wknights, bknights, wbishops, bbishops,
+                      wrooks, brooks, wqueens, bqueens, wking, bking);
 
   std::cout << "=== Chess Engine Testing ===\n";
   std::cout << "Initial board:\n";
   printBoard(board);
 
-  // Test king moves
-  std::cout << "Testing white knight moves:\n";
-  std::vector<Move> knightMoves =
-      MoveGeneration::generateKnightMoves(board, true);
-  printMoves(knightMoves);
+  std::cout << "Is the White King checked? "
+            << (board.isKingChecked(true) ? "Yes" : "No") << "\n";
 
-  // Make a move
-  if (!knightMoves.empty()) {
+  std::vector<Move> legalMoves = MoveGeneration::generateAllMoves(board, true);
 
-    for (int i = 0; i < knightMoves.size(); i++) {
-      std::cout << "Making " << i + 1 << ". available move...\n";
-      board.makeMove(knightMoves[i]);
-      printBoard(board);
+  printMoves(legalMoves);
 
-      // Test undo
-      std::cout << "Undoing move...\n";
-      board.undoMove();
-      printBoard(board);
-    }
-  }
+  board.makeMove(legalMoves[0]);
+  printBoard(board);
+
+  std::cout << "Is the White King checked? "
+            << (board.isKingChecked(true) ? "Yes" : "No") << "\n";
 
   return 0;
 }

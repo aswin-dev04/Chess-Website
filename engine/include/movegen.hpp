@@ -39,8 +39,9 @@ public:
   // Legal Moves
 
   static std::vector<Move> generateAllMoves(Board &board, bool isWhite);
-  static std::vector<Move> generateLegalMovesWhileInCheck(Board &board,
-                                                          bool isWhite);
+  static std::vector<Move>
+  generateLegalMovesWhileInCheck(Board &board, bool isWhite,
+                                 std::vector<Move> allMoves);
 
   // non-sliding pieces
   static std::vector<Move> generateKingLegalMoves(Board &board, bool isWhite);
