@@ -490,35 +490,17 @@ u64 validMoveBB::kingLegalMoves(Board &board, bool isWhite) {
 std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
                                                          bool isWhite) {
 
-  std::vector<Move> moves;
+  std::vector<Move> legalKingMoves;
 
-  // relevant bitboards
-  u64 kingLoc = isWhite ? board.getWhiteKing() : board.getBlackKing();
-  u64 enemyPieces =
-      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
-
-  u64 legalMoves = validMoveBB::kingLegalMoves(board, isWhite);
-
-  // Get king position
-  Square kingSquare = Utils::bitboardToSquare(kingLoc);
-  PieceType kingPiece = isWhite ? WHITE_KING : BLACK_KING;
-
-  while (legalMoves) {
-    Square toSquare = Utils::popLSB(legalMoves);
-    u64 toSquareBitboard = Utils::squareToBitboard(toSquare);
-    bool isCapture = (enemyPieces & toSquareBitboard) != 0;
-
-    if (isCapture) {
-      // Find what piece we're capturing
-      PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
-      moves.emplace_back(kingSquare, toSquare, kingPiece, capturedPiece, false,
-                         false, false, false, EMPTY); // Capture move
-    } else {
-      moves.emplace_back(kingSquare, toSquare, kingPiece, EMPTY, false, false,
-                         false, false, EMPTY); // Normal move
+  std::vector<Move> pseudoLegalKingMoves = generateKingMoves(board, isWhite);
+  for (const Move &move : pseudoLegalKingMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalKingMoves.push_back(move);
     }
+    board.undoMove();
   }
-  return moves;
+  return legalKingMoves;
 }
 
 std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,

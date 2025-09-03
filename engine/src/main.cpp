@@ -80,7 +80,7 @@ int main() {
 
   u64 bpawns = 0ULL;
   u64 bknights = 0ULL;
-  u64 bbishops = 0ULL;
+  u64 bbishops = 0x0100000000000000ULL;
   u64 brooks = 0ULL;
   u64 bqueens = 0x1000000000000000ULL; // E8
   u64 bking = 0ULL;
