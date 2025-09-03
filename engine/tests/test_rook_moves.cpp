@@ -152,6 +152,69 @@ bool test_rook_surrounded() {
   return true;
 }
 
+bool test_rook_pinned_diagonally() {
+  Board board;
+  board.setWhiteKing(0x0000000000000001ULL);  // A1
+  board.setWhiteRooks(0x0000000000040000ULL); // C3 - pinned rook
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0x0000200000000000ULL); // F6 - pinning bishop
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves = MoveGeneration::generateRookLegalMoves(board, true);
+  // Diagonally pinned rook should have 0 legal moves
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+bool test_rook_pinned_horizontally_by_rook() {
+  Board board;
+  board.setWhiteKing(0x0000000010000000ULL);  // E4
+  board.setWhiteRooks(0x0000000020000000ULL); // F4 - pinned rook
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000000080000000ULL); // H4 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves = MoveGeneration::generateRookLegalMoves(board, true);
+  ASSERT_EQ(2, moves.size());
+
+  return true;
+}
+
+bool test_rook_pinned_vertically_by_queen() {
+  Board board;
+  board.setWhiteKing(0x0000000000001000ULL);  // E2
+  board.setWhiteRooks(0x0000000010000000ULL); // E4 - pinned rook
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0x0000100000000000ULL); // E6 - pinning queen
+  board.setBlackKing(0x8000000000000000ULL);   // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves = MoveGeneration::generateRookLegalMoves(board, true);
+  ASSERT_EQ(3, moves.size());
+
+  return true;
+}
+
 int main() {
   std::cout << "Running Rook Move Generation Tests..." << std::endl;
   RUN_TEST(test_white_rook_center_empty);
@@ -160,6 +223,10 @@ int main() {
   RUN_TEST(test_rook_edge_file);
   RUN_TEST(test_multiple_rooks);
   RUN_TEST(test_rook_surrounded);
+
+  RUN_TEST(test_rook_pinned_diagonally);
+  RUN_TEST(test_rook_pinned_horizontally_by_rook);
+  RUN_TEST(test_rook_pinned_vertically_by_queen);
   std::cout << "Rook tests completed!" << std::endl;
   return 0;
 }

@@ -315,6 +315,86 @@ bool test_knight_near_corner() {
   return true;
 }
 
+// Test 11: Knight pinned horizontally by rook
+bool test_knight_pinned_horizontally() {
+  Board board;
+  // Set up horizontal pin: White king on E4, White knight on F4, Black rook on
+  // H4
+  board.setWhiteKing(0x0000000010000000ULL);    // E4
+  board.setWhiteKnights(0x0000000020000000ULL); // F4 - pinned knight
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000000080000000ULL); // H4 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves =
+      MoveGeneration::generateKnightLegalMoves(board, true);
+
+  // Pinned knight should have 0 legal moves
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+// Test 12: Knight pinned vertically by rook
+bool test_knight_pinned_vertically() {
+  Board board;
+  // Set up vertical pin: White king on E2, White knight on E4, Black rook on E7
+  board.setWhiteKing(0x0000000000001000ULL);    // E2
+  board.setWhiteKnights(0x0000000010000000ULL); // E4 - pinned knight
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000100000000000ULL); // E7 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves =
+      MoveGeneration::generateKnightLegalMoves(board, true);
+
+  // Pinned knight should have 0 legal moves
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+// Test 13: Knight pinned diagonally by bishop
+bool test_knight_pinned_diagonally() {
+  Board board;
+  // Set up diagonal pin: White king on C2, White knight on E4, Black bishop on
+  // G6
+  board.setWhiteKing(0x0000000000000400ULL);    // C2
+  board.setWhiteKnights(0x0000000010000000ULL); // E4 - pinned knight
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0x0000400000000000ULL); // G6 - pinning bishop
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves =
+      MoveGeneration::generateKnightLegalMoves(board, true);
+
+  // Pinned knight should have 0 legal moves
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
 int main() {
   std::cout << "Running Knight Move Generation Tests..." << std::endl;
 
@@ -328,6 +408,9 @@ int main() {
   RUN_TEST(test_multiple_knights_with_captures);
   RUN_TEST(test_knight_mixed_scenario);
   RUN_TEST(test_knight_near_corner);
+  RUN_TEST(test_knight_pinned_horizontally);
+  RUN_TEST(test_knight_pinned_vertically);
+  RUN_TEST(test_knight_pinned_diagonally);
 
   std::cout << "Knight tests completed!" << std::endl;
   return 0;

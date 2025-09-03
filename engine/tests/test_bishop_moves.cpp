@@ -153,6 +153,73 @@ bool test_bishop_completely_blocked() {
   return true;
 }
 
+bool test_bishop_pinned_horizontally() {
+  Board board;
+  board.setWhiteKing(0x0000000010000000ULL);    // E4
+  board.setWhiteBishops(0x0000000020000000ULL); // F4 - pinned bishop
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000000080000000ULL); // H4 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateBishopLegalMoves(board, true);
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+bool test_bishop_pinned_vertically() {
+  Board board;
+  board.setWhiteKing(0x0000000000001000ULL);    // E2
+  board.setWhiteBishops(0x0000000010000000ULL); // E4 - pinned bishop
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000100000000000ULL); // E7 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateBishopLegalMoves(board, true);
+  // Vertically pinned bishop should have 0 legal moves
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+bool test_bishop_pinned_diagonally_by_bishop() {
+  Board board;
+
+  board.setWhiteKing(0x0000000000000001ULL);    // A1
+  board.setWhiteBishops(0x0000000000040000ULL); // C3 - pinned bishop
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0x0000200000000000ULL); // F6 - pinning bishop
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateBishopLegalMoves(board, true);
+
+  ASSERT_EQ(4, moves.size());
+
+  return true;
+}
+
 int main() {
   std::cout << "Running Bishop Move Generation Tests..." << std::endl;
   RUN_TEST(test_white_bishop_center_empty);
@@ -161,6 +228,10 @@ int main() {
   RUN_TEST(test_bishop_corner);
   RUN_TEST(test_multiple_bishops);
   RUN_TEST(test_bishop_completely_blocked);
+
+  RUN_TEST(test_bishop_pinned_horizontally);
+  RUN_TEST(test_bishop_pinned_vertically);
+  RUN_TEST(test_bishop_pinned_diagonally_by_bishop);
   std::cout << "Bishop tests completed!" << std::endl;
   return 0;
 }

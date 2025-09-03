@@ -266,6 +266,72 @@ bool test_advanced_pawns() {
   return true;
 }
 
+bool test_pawn_pinned_horizontally() {
+  Board board;
+  board.setWhiteKing(0x0000000010000000ULL);  // E4
+  board.setWhitePawns(0x0000000020000000ULL); // F4
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000000080000000ULL); // H4 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+bool test_pawn_pinned_vertically() {
+  Board board;
+  board.setWhiteKing(0x0000000000001000ULL);  // E2
+  board.setWhitePawns(0x0000000010000000ULL); // E4
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000100000000000ULL); // E7 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  ASSERT_EQ(1, moves.size());
+  return true;
+}
+
+bool test_pawn_pinned_diagonally() {
+  Board board;
+  board.setWhiteKing(0x0000000000000400ULL);  // C2
+  board.setWhitePawns(0x0000000010000000ULL); // E4 - pinned pawn
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0x0000400000000000ULL); // G6 - pinning bishop
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
 int main() {
   std::cout << "Running Pawn Move Generation Tests..." << std::endl;
 
@@ -278,6 +344,10 @@ int main() {
   RUN_TEST(test_pawn_edge_files);
   RUN_TEST(test_multiple_pawns_mixed);
   RUN_TEST(test_advanced_pawns);
+
+  RUN_TEST(test_pawn_pinned_horizontally);
+  RUN_TEST(test_pawn_pinned_vertically);
+  RUN_TEST(test_pawn_pinned_diagonally);
 
   std::cout << "Pawn tests completed!" << std::endl;
   return 0;

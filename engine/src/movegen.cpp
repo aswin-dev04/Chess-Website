@@ -520,3 +520,85 @@ std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
   }
   return moves;
 }
+
+std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,
+                                                           bool isWhite) {
+
+  std::vector<Move> legalKnightMoves;
+
+  std::vector<Move> pseudoLegalKnightMoves =
+      generateKnightMoves(board, isWhite);
+  for (const Move &move : pseudoLegalKnightMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalKnightMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalKnightMoves;
+}
+
+std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board &board,
+                                                         bool isWhite) {
+
+  std::vector<Move> legalPawnMoves;
+
+  std::vector<Move> pseudoLegalPawnMoves = generatePawnMoves(board, isWhite);
+  for (const Move &move : pseudoLegalPawnMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalPawnMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalPawnMoves;
+}
+
+std::vector<Move> MoveGeneration::generateRookLegalMoves(Board &board,
+                                                         bool isWhite) {
+
+  std::vector<Move> legalRookMoves;
+
+  std::vector<Move> pseudoLegalRookMoves = generateRookMoves(board, isWhite);
+  for (const Move &move : pseudoLegalRookMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalRookMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalRookMoves;
+}
+
+std::vector<Move> MoveGeneration::generateBishopLegalMoves(Board &board,
+                                                           bool isWhite) {
+
+  std::vector<Move> legalBishopMoves;
+
+  std::vector<Move> pseudoLegalBishopMoves =
+      generateBishopMoves(board, isWhite);
+  for (const Move &move : pseudoLegalBishopMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalBishopMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalBishopMoves;
+}
+
+std::vector<Move> MoveGeneration::generateQueenLegalMoves(Board &board,
+                                                          bool isWhite) {
+
+  std::vector<Move> legalQueenMoves;
+
+  std::vector<Move> pseudoLegalQueenMoves = generateQueenMoves(board, isWhite);
+  for (const Move &move : pseudoLegalQueenMoves) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalQueenMoves.push_back(move);
+    }
+    board.undoMove();
+  }
+  return legalQueenMoves;
+}

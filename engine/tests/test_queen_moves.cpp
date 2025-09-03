@@ -148,6 +148,69 @@ bool test_queen_completely_blocked() {
   return true;
 }
 
+bool test_queen_pinned_horizontally() {
+  Board board;
+  board.setWhiteKing(0x0000000010000000ULL);   // E4
+  board.setWhiteQueens(0x0000000020000000ULL); // F4 - pinned queen
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0000000080000000ULL); // H4 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateQueenLegalMoves(board, true);
+  ASSERT_EQ(2, moves.size());
+  return true;
+}
+
+bool test_queen_pinned_vertically() {
+  Board board;
+  board.setWhiteKing(0x0000000000001000ULL);   // E2
+  board.setWhiteQueens(0x0000000010000000ULL); // E4 - pinned queen
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0x0010000000000000ULL); // E7 - pinning rook
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateQueenLegalMoves(board, true);
+  ASSERT_EQ(4, moves.size());
+  return true;
+}
+
+bool test_queen_pinned_diagonally() {
+  Board board;
+  board.setWhiteKing(0x0000000000000001ULL);   // A1
+  board.setWhiteQueens(0x0000000000040000ULL); // C3 - pinned queen
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0x0000200000000000ULL); // F6 - pinning bishop
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x8000000000000000ULL); // H8
+  board.setALLPiecesAggregate();
+  std::vector<Move> moves =
+      MoveGeneration::generateQueenLegalMoves(board, true);
+  ASSERT_EQ(4, moves.size());
+  return true;
+}
+
 int main() {
   std::cout << "Running Queen Move Generation Tests..." << std::endl;
   RUN_TEST(test_white_queen_center_empty);
@@ -156,6 +219,11 @@ int main() {
   RUN_TEST(test_queen_corner);
   RUN_TEST(test_multiple_queens);
   RUN_TEST(test_queen_completely_blocked);
+
+  RUN_TEST(test_queen_pinned_horizontally);
+  RUN_TEST(test_queen_pinned_vertically);
+  RUN_TEST(test_queen_pinned_diagonally);
+
   std::cout << "Queen tests completed!" << std::endl;
   return 0;
 }
