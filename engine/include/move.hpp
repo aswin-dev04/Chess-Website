@@ -17,7 +17,12 @@ private:
   bool isPromotion;
 
 public:
-  // Basic constructor
+  // Default constructor - initialize all members
+  Move()
+      : fromSquare(Square::SQ_NONE), toSquare(Square::SQ_NONE),
+        pieceType(EMPTY), capturedPiece(EMPTY), promotionPiece(EMPTY),
+        isCapture(false), isEnPassant(false), isKingSideCastle(false),
+        isQueenSideCastle(false), isPromotion(false) {} // Basic constructor
   Move(Square from, Square to, PieceType piece, PieceType captured = EMPTY)
       : fromSquare(from), toSquare(to), pieceType(piece),
         capturedPiece(captured), promotionPiece(EMPTY),
@@ -35,6 +40,8 @@ public:
         isPromotion(promotion) {}
 
   ~Move() = default;
+
+  Move &operator=(const Move &other);
 
   // Basic getters
   inline Square getFromSquare() const { return fromSquare; }

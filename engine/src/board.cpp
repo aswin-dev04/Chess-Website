@@ -89,9 +89,6 @@ void Board::makeMove(const Move &move) {
   }
 
   if (isCastling) {
-  }
-
-  if (isPromotion) {
   }*/
 
   switch (piece) {
@@ -100,13 +97,86 @@ void Board::makeMove(const Move &move) {
   case WHITE_PAWN:
     currPieceLoc = getWhitePawns();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
+    if (isPromotion) {
+      PieceType promotedPiece = move.getPromotionPiece();
+
+      switch (promotedPiece) {
+      case WHITE_QUEEN: {
+        u64 promoPieces = getWhiteQueens();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setWhiteQueens(promoPieces);
+        break;
+      }
+
+      case WHITE_ROOK: {
+        u64 promoPieces = getWhiteRooks();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setWhiteRooks(promoPieces);
+        break;
+      }
+
+      case WHITE_BISHOP: {
+        u64 promoPieces = getWhiteBishops();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setWhiteBishops(promoPieces);
+        break;
+      }
+
+      case WHITE_KNIGHT: {
+        u64 promoPieces = getWhiteKnights();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setWhiteKnights(promoPieces);
+        break;
+      }
+      default:
+        break;
+      }
+    } else
+      currPieceLoc |= Utils::squareToBitboard(toSquare);
+
     setWhitePawns(currPieceLoc);
     break;
   case BLACK_PAWN:
     currPieceLoc = getBlackPawns();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
+
+    if (isPromotion) {
+      PieceType promotedPiece = move.getPromotionPiece();
+
+      switch (promotedPiece) {
+      case BLACK_QUEEN: {
+        u64 promoPieces = getBlackQueens();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setBlackQueens(promoPieces);
+        break;
+      }
+
+      case BLACK_ROOK: {
+        u64 promoPieces = getBlackRooks();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setBlackRooks(promoPieces);
+        break;
+      }
+
+      case BLACK_BISHOP: {
+        u64 promoPieces = getBlackBishops();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setBlackBishops(promoPieces);
+        break;
+      }
+
+      case BLACK_KNIGHT: {
+        u64 promoPieces = getBlackKnights();
+        promoPieces |= Utils::squareToBitboard(toSquare);
+        setBlackKnights(promoPieces);
+        break;
+      }
+      default:
+        break;
+      }
+    } else
+      currPieceLoc |= Utils::squareToBitboard(toSquare);
+
     setBlackPawns(currPieceLoc);
     break;
   case WHITE_KNIGHT:

@@ -332,6 +332,146 @@ bool test_pawn_pinned_diagonally() {
   return true;
 }
 
+bool test_white_pawn_promotion_queen() {
+  Board board;
+  // White pawn on G7, ready to promote
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0040000000000000ULL); // G7 - promotion pawn
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  // Should find 4 promotion moves (Queen, Rook, Bishop, Knight)
+  ASSERT_EQ(4, moves.size());
+
+  // Find the queen promotion move
+  Move queenPromotion;
+  bool foundQueenPromo = false;
+  for (const Move &move : moves) {
+    if (move.getIsPromotion() && move.getPromotionPiece() == WHITE_QUEEN) {
+      queenPromotion = move;
+      foundQueenPromo = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(foundQueenPromo);
+
+  // Make the queen promotion move
+  board.makeMove(queenPromotion);
+
+  // Verify pawn is gone from G7
+  ASSERT_EQ(0ULL, board.getWhitePawns());
+
+  // Verify queen is on G8
+  ASSERT_EQ(0x4000000000000000ULL, board.getWhiteQueens()); // G8
+
+  return true;
+}
+
+bool test_black_pawn_promotion_capture() {
+  Board board;
+  // Black pawn on F2, White rook on G1 (capture promotion target)
+  board.setWhiteKing(0x0000000000000100ULL); // E1
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0x0000000000000040ULL); // G1 - capture target
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000000002000ULL); // F2 - promotion pawn
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves =
+      MoveGeneration::generatePawnLegalMoves(board, false);
+
+  // Should find promotion moves (including capture promotions)
+  ASSERT_EQ(8, moves.size());
+
+  // Find a capture promotion move (promote to rook while capturing)
+  Move capturePromotion;
+  bool foundCapturePromo = false;
+  for (const Move &move : moves) {
+    if (move.getIsPromotion() && move.getIsCapture() &&
+        move.getPromotionPiece() == BLACK_ROOK) {
+      capturePromotion = move;
+      foundCapturePromo = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(foundCapturePromo);
+
+  // Make the capture promotion move
+  board.makeMove(capturePromotion);
+
+  // Verify pawn is gone
+  ASSERT_EQ(0ULL, board.getBlackPawns());
+
+  // Verify white rook is captured (gone)
+  ASSERT_EQ(0ULL, board.getWhiteRooks());
+
+  // Verify black rook is on G1
+  ASSERT_EQ(0x0000000000000040ULL, board.getBlackRooks()); // G1
+
+  return true;
+}
+
+bool test_white_pawn_underpromotion_knight() {
+  Board board;
+  // White pawn on A7, ready to promote
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0001000000000000ULL); // A7 - promotion pawn
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  // Find the knight promotion move
+  Move knightPromotion;
+  bool foundKnightPromo = false;
+  for (const Move &move : moves) {
+    if (move.getIsPromotion() && move.getPromotionPiece() == WHITE_KNIGHT) {
+      knightPromotion = move;
+      foundKnightPromo = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(foundKnightPromo);
+
+  // Make the knight promotion move
+  board.makeMove(knightPromotion);
+
+  // Verify pawn is gone from A7
+  ASSERT_EQ(0ULL, board.getWhitePawns());
+
+  // Verify knight is on A8
+  ASSERT_EQ(0x0100000000000000ULL, board.getWhiteKnights()); // A8
+
+  return true;
+}
+
 int main() {
   std::cout << "Running Pawn Move Generation Tests..." << std::endl;
 
@@ -348,6 +488,10 @@ int main() {
   RUN_TEST(test_pawn_pinned_horizontally);
   RUN_TEST(test_pawn_pinned_vertically);
   RUN_TEST(test_pawn_pinned_diagonally);
+
+  RUN_TEST(test_white_pawn_promotion_queen);
+  RUN_TEST(test_black_pawn_promotion_capture);
+  RUN_TEST(test_white_pawn_underpromotion_knight);
 
   std::cout << "Pawn tests completed!" << std::endl;
   return 0;

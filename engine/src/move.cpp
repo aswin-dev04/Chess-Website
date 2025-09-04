@@ -56,3 +56,19 @@ std::ostream &operator<<(std::ostream &os, const Move &move) {
 
   return os;
 }
+
+Move &Move::operator=(const Move &other) {
+  if (this != &other) {
+    fromSquare = other.fromSquare;
+    toSquare = other.toSquare;
+    pieceType = other.pieceType;
+    capturedPiece = other.capturedPiece;
+    promotionPiece = other.promotionPiece;
+    isCapture = other.isCapture;
+    isEnPassant = other.isEnPassant;
+    isKingSideCastle = other.isKingSideCastle;
+    isQueenSideCastle = other.isQueenSideCastle;
+    isPromotion = other.isPromotion;
+  }
+  return *this;
+}
