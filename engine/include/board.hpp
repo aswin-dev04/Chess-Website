@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <sys/types.h>
+#include <vector>
 
 using u64 = uint64_t;
 
@@ -27,6 +28,7 @@ private:
   u64 allPieces;
 
   std::unique_ptr<Board> prevState;
+  std::vector<Move> moveHistory;
 
 public:
   Board();
@@ -38,14 +40,18 @@ public:
   Board &operator=(const Board &other);
 
   void makeMove(const Move &move);
-  inline void undoMove() {
-    if (prevState)
-      *this = *prevState;
-  }
+  void undoMove();
 
   bool isKingChecked(bool isWhite);
 
   int getAttackersCount(bool isWhite);
+
+  // methods for castling
+  bool canCastleKingSide(bool isWhite);
+  bool canCastleQueenSide(bool isWhite);
+  bool hasKingMoved(bool isWhite);
+  bool hasKingSideRookMoved(bool isWhite);
+  bool hasQueenSideRookMoved(bool isWhite);
 
   // getters and setters for pawns
   inline u64 getWhitePawns() const { return whitePawns; }
@@ -128,6 +134,8 @@ public:
     setAllBlackPieces();
     setAllPieces();
   }
+
+  inline std::vector<Move> getMoveHistory() const { return moveHistory; }
 };
 
 #endif

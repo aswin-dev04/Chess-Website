@@ -472,6 +472,112 @@ bool test_white_pawn_underpromotion_knight() {
   return true;
 }
 
+// Test: Valid white en passant capture
+bool test_white_en_passant_valid() {
+  Board board;
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0000000800000000ULL); // D5
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0004000000000000ULL); // C5 - target pawn
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x1000000000000000ULL); // E8
+  board.setALLPiecesAggregate();
+
+  // Simulate black pawn double move C7->C5
+  Move lastMove(C7, C5, BLACK_PAWN);
+  board.makeMove(lastMove);
+
+  std::vector<Move> moves = MoveGeneration::generatePawnLegalMoves(board, true);
+
+  ASSERT_EQ(2, moves.size());
+  return true;
+}
+
+// Test: No en passant - last move wasn't pawn double jump
+bool test_no_en_passant_single_move() {
+  Board board;
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0000000800000000ULL); // D5
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000400000000ULL); // C5
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x1000000000000000ULL); // E8
+  board.setALLPiecesAggregate();
+
+  // Simulate single move C6->C5 (not double jump)
+  Move lastMove(C6, C5, BLACK_PAWN);
+  board.makeMove(lastMove);
+
+  std::vector<Move> moves = MoveGeneration::generateEnPassantMoves(board, true);
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+// Test: No en passant - no adjacent pawns
+bool test_no_en_passant_no_adjacent() {
+  Board board;
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0000002000000000ULL); // F5 - not adjacent
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000800000000ULL); // D5
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x1000000000000000ULL); // E8
+  board.setALLPiecesAggregate();
+
+  // Simulate black pawn double move D7->D5
+  Move lastMove(D7, D5, BLACK_PAWN);
+  board.makeMove(lastMove);
+
+  std::vector<Move> moves = MoveGeneration::generateEnPassantMoves(board, true);
+  ASSERT_EQ(0, moves.size());
+  return true;
+}
+
+// Test: Black en passant capture
+bool test_black_en_passant_valid() {
+  Board board;
+  board.setWhiteKing(0x0000000000000010ULL);  // E1
+  board.setWhitePawns(0x0000000010000000ULL); // E4
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setBlackPawns(0x0000000008000000ULL); // D4
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setBlackKing(0x1000000000000000ULL); // E8
+  board.setALLPiecesAggregate();
+
+  // Simulate white pawn double move E2->E4
+  Move lastMove(E2, E4, WHITE_PAWN);
+  board.makeMove(lastMove);
+
+  std::vector<Move> moves =
+      MoveGeneration::generateEnPassantMoves(board, false);
+  ASSERT_EQ(1, moves.size());
+  return true;
+}
+
 int main() {
   std::cout << "Running Pawn Move Generation Tests..." << std::endl;
 
@@ -492,6 +598,12 @@ int main() {
   RUN_TEST(test_white_pawn_promotion_queen);
   RUN_TEST(test_black_pawn_promotion_capture);
   RUN_TEST(test_white_pawn_underpromotion_knight);
+
+  RUN_TEST(test_white_en_passant_valid);
+  RUN_TEST(test_black_en_passant_valid);
+  RUN_TEST(test_no_en_passant_single_move);
+  RUN_TEST(test_no_en_passant_no_adjacent);
+  RUN_TEST(test_black_en_passant_valid);
 
   std::cout << "Pawn tests completed!" << std::endl;
   return 0;

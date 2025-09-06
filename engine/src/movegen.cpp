@@ -211,10 +211,84 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
   return promotionMoves;
 }
 
+std::vector<Move> MoveGeneration::generateEnPassantMoves(Board &board,
+                                                         bool isWhite) {
+
+  std::vector<Move> enPassantMoves;
+
+  u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+  PieceType pawnPiece = isWhite ? WHITE_PAWN : BLACK_PAWN;
+  PieceType capturedPiece = isWhite ? BLACK_PAWN : WHITE_PAWN;
+  u64 enPassantPawns =
+      isWhite ? pawns & Tables::maskRank[4] : pawns & Tables::maskRank[3];
+
+  if (enPassantPawns == 0)
+    return {};
+
+  Move lastMove =
+      !board.getMoveHistory().empty() ? board.getMoveHistory().back() : Move();
+  bool isLastMovePawn = lastMove.getPieceType() == WHITE_PAWN ||
+                        lastMove.getPieceType() == BLACK_PAWN;
+
+  if (!isLastMovePawn)
+    return {};
+
+  Square fromSq = lastMove.getFromSquare();
+  Square toSq = lastMove.getToSquare();
+  int captureablePawnFile = toSq % 8;
+
+  bool isDoubleMove = isWhite ? fromSq - toSq == 16 : toSq - fromSq == 16;
+
+  if (!isDoubleMove)
+    return {};
+
+  while (enPassantPawns) {
+    Square currPawnSquare = Utils::popLSB(enPassantPawns);
+
+    if (captureablePawnFile - 1 >= 0 &&
+        (currPawnSquare % 8 == captureablePawnFile - 1)) {
+      Square destSq;
+
+      if (isWhite)
+        destSq = static_cast<Square>((((currPawnSquare / 8) + 1) * 8) +
+                                     captureablePawnFile);
+
+      else
+        destSq = static_cast<Square>((((currPawnSquare / 8) - 1) * 8) +
+                                     captureablePawnFile);
+
+      enPassantMoves.emplace_back(currPawnSquare, destSq, pawnPiece,
+                                  capturedPiece, true, false, false, false,
+                                  EMPTY);
+    }
+
+    if (captureablePawnFile + 1 <= 7 &&
+        (currPawnSquare % 8 == captureablePawnFile + 1)) {
+      Square destSq;
+
+      if (isWhite)
+        destSq = static_cast<Square>((((currPawnSquare / 8) + 1) * 8) +
+                                     captureablePawnFile);
+
+      else
+        destSq = static_cast<Square>((((currPawnSquare / 8) - 1) * 8) +
+                                     captureablePawnFile);
+
+      enPassantMoves.emplace_back(currPawnSquare, destSq, pawnPiece,
+                                  capturedPiece, true, false, false, false,
+                                  EMPTY);
+    }
+  }
+
+  return enPassantMoves;
+}
+
 std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
                                                     bool isWhite) {
 
   std::vector<Move> moves;
+  std::vector<Move> enPassantMoves = generateEnPassantMoves(board, isWhite);
+  moves.insert(moves.end(), enPassantMoves.begin(), enPassantMoves.end());
 
   // relevant bitboards
   u64 ownPieces =
@@ -564,6 +638,10 @@ std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
 
   std::vector<Move> legalKingMoves;
 
+  std::vector<Move> castlingMoves = generateCastlingMoves(board, isWhite);
+  legalKingMoves.insert(legalKingMoves.end(), castlingMoves.begin(),
+                        castlingMoves.end());
+
   std::vector<Move> pseudoLegalKingMoves = generateKingMoves(board, isWhite);
   for (const Move &move : pseudoLegalKingMoves) {
     board.makeMove(move);
@@ -699,4 +777,31 @@ MoveGeneration::generateLegalMovesWhileInCheck(Board &board, bool isWhite,
     board.undoMove();
   }
   return legalMoves;
+}
+
+std::vector<Move> MoveGeneration::generateCastlingMoves(Board &board,
+                                                        bool isWhite) {
+
+  std::vector<Move> castlingMoves;
+  PieceType king = isWhite ? WHITE_KING : BLACK_KING;
+
+  if (board.canCastleKingSide(isWhite)) {
+    if (isWhite)
+      castlingMoves.emplace_back(E1, G1, king, EMPTY, false, true, false, false,
+                                 EMPTY);
+
+    else
+      castlingMoves.emplace_back(E8, G8, king, EMPTY, false, true, false, false,
+                                 EMPTY);
+  }
+  if (board.canCastleQueenSide(isWhite)) {
+    if (isWhite)
+      castlingMoves.emplace_back(E1, C1, king, EMPTY, false, false, true, false,
+                                 EMPTY);
+
+    else
+      castlingMoves.emplace_back(E8, C8, king, EMPTY, false, false, true, false,
+                                 EMPTY);
+  }
+  return castlingMoves;
 }

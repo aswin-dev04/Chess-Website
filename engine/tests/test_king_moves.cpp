@@ -521,6 +521,122 @@ bool test_king_no_moves() {
   return true;
 }
 
+// Test: Basic kingside castling - all conditions met
+bool test_kingside_castling_valid() {
+  Board board;
+  // Clear all pieces
+  board.setWhitePawns(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteRooks(1ULL << 7); // H1 only
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKing(1ULL << 4); // E1
+  board.setBlackKing(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateCastlingMoves(board, true);
+
+  ASSERT_EQ(1, moves.size()); // Should have kingside castling
+  return true;
+}
+
+// Test: Castling blocked - pieces between king and rook
+bool test_castling_blocked() {
+  Board board;
+
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKing(1ULL << 4);    // E1
+  board.setWhiteRooks(1ULL << 7);   // H1
+  board.setWhiteKnights(1ULL << 6); // G1 - blocking piece
+  board.setBlackKing(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateCastlingMoves(board, true);
+  ASSERT_EQ(0, moves.size()); // No castling possible
+  return true;
+}
+
+// Test: King in check - cannot castle
+bool test_castling_king_in_check() {
+  Board board;
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteKing(1ULL << 4);   // E1
+  board.setWhiteRooks(1ULL << 7);  // H1
+  board.setBlackRooks(1ULL << 60); // E8 - attacks E1
+  board.setBlackKing(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateCastlingMoves(board, true);
+  ASSERT_EQ(0, moves.size()); // Cannot castle when in check
+  return true;
+}
+
+// Test: King passes through attacked square
+bool test_castling_through_attack() {
+  Board board;
+
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteKing(1ULL << 4);   // E1
+  board.setWhiteRooks(1ULL << 7);  // H1
+  board.setBlackRooks(1ULL << 61); // F8 - attacks F1
+  board.setBlackKing(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateCastlingMoves(board, true);
+  ASSERT_EQ(0, moves.size()); // Cannot castle through attacked F1
+  return true;
+}
+
+// Test: Queenside castling valid
+bool test_queenside_castling_valid() {
+  Board board;
+
+  board.setWhitePawns(0ULL);
+  board.setWhiteBishops(0ULL);
+  board.setWhiteQueens(0ULL);
+  board.setWhiteKnights(0ULL);
+  board.setWhiteKing(1ULL << 4); // E1
+  board.setWhiteRooks(1ULL);     // A1 only
+  board.setBlackKing(0ULL);
+  board.setBlackPawns(0ULL);
+  board.setBlackKnights(0ULL);
+  board.setBlackBishops(0ULL);
+  board.setBlackRooks(0ULL);
+  board.setBlackQueens(0ULL);
+  board.setALLPiecesAggregate();
+
+  std::vector<Move> moves = MoveGeneration::generateCastlingMoves(board, true);
+  ASSERT_EQ(1, moves.size()); // Should have queenside castling
+  return true;
+}
+
 int main() {
   std::cout << "Running Legal King Move Tests..." << std::endl;
 
@@ -544,6 +660,11 @@ int main() {
   RUN_TEST(test_king_mixed_scenario);
   RUN_TEST(test_king_no_moves);
 
+  RUN_TEST(test_kingside_castling_valid);
+  RUN_TEST(test_castling_blocked);
+  RUN_TEST(test_castling_king_in_check);
+  RUN_TEST(test_castling_through_attack);
+  RUN_TEST(test_queenside_castling_valid);
   std::cout << "Tests completed!" << std::endl;
   return 0;
 }
