@@ -3,12 +3,20 @@
 
 #include "move.hpp"
 #include <cstdint>
-#include <memory>
 #include <sys/types.h>
 #include <vector>
 
 using u64 = uint64_t;
 
+struct undoInfo {
+  Move move;
+  PieceType capturedPiece;
+  Square enPassantSquare;
+  bool canWhiteCastleKS;
+  bool canWhiteCastleQS;
+  bool canBlackCastleKS;
+  bool canBlackCastleQS;
+};
 class Board {
 private:
   u64 whitePawns;
@@ -27,14 +35,22 @@ private:
   u64 allBlackPieces;
   u64 allPieces;
 
-  std::unique_ptr<Board> prevState;
+  std::vector<undoInfo> stateHistory;
   std::vector<Move> moveHistory;
+
+  bool canWhiteCastleKS = true;
+  bool canWhiteCastleQS = true;
+  bool canBlackCastleKS = true;
+  bool canBlackCastleQS = true;
+  Square enPassantSquare = SQ_NONE;
+  bool whiteToMove = true;
 
 public:
   Board();
   Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
         u64 bBishops, u64 wRooks, u64 bRooks, u64 wQueens, u64 bQueens,
         u64 wKing, u64 bKing);
+  Board(const std::string &fen);
   ~Board() = default;
 
   Board &operator=(const Board &other);
@@ -46,12 +62,11 @@ public:
 
   int getAttackersCount(bool isWhite);
 
+  void loadFromFen(const std::string &fen);
+
   // methods for castling
   bool canCastleKingSide(bool isWhite);
   bool canCastleQueenSide(bool isWhite);
-  bool hasKingMoved(bool isWhite);
-  bool hasKingSideRookMoved(bool isWhite);
-  bool hasQueenSideRookMoved(bool isWhite);
 
   // getters and setters for pawns
   inline u64 getWhitePawns() const { return whitePawns; }
@@ -136,6 +151,13 @@ public:
   }
 
   inline std::vector<Move> getMoveHistory() const { return moveHistory; }
+
+  inline bool getCanWhiteCastleKS() const { return canWhiteCastleKS; }
+  inline bool getCanWhiteCastleQS() const { return canWhiteCastleQS; }
+  inline bool getCanBlackCastleKS() const { return canBlackCastleKS; }
+  inline bool getCanBlackCastleQS() const { return canBlackCastleQS; }
+  inline bool getWhiteToMove() const { return whiteToMove; }
+  inline Square getEnPassantSquare() const { return enPassantSquare; }
 };
 
 #endif

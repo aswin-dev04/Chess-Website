@@ -2,7 +2,6 @@
 #define MOVEGEN_HPP
 
 #include "board.hpp"
-#include "move.hpp"
 #include "tables.hpp"
 #include <vector>
 

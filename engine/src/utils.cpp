@@ -170,3 +170,48 @@ int Utils::getCaptureCount(Board &board, PieceType pieceType, bool isWhite) {
 
   return captureCount;
 }
+
+Square Utils::stringToSquare(const std::string &square) {
+  if (square.length() != 2)
+    return SQ_NONE;
+
+  int file = square[0] - 'a';
+  int rank = square[1] - '1';
+
+  if (file < 0 || file > 7 || rank < 0 || rank > 7) {
+    return SQ_NONE;
+  }
+
+  return static_cast<Square>(rank * 8 + file);
+}
+
+PieceType Utils::charToPiece(char c) {
+  switch (c) {
+  case 'P':
+    return WHITE_PAWN;
+  case 'N':
+    return WHITE_KNIGHT;
+  case 'B':
+    return WHITE_BISHOP;
+  case 'R':
+    return WHITE_ROOK;
+  case 'Q':
+    return WHITE_QUEEN;
+  case 'K':
+    return WHITE_KING;
+  case 'p':
+    return BLACK_PAWN;
+  case 'n':
+    return BLACK_KNIGHT;
+  case 'b':
+    return BLACK_BISHOP;
+  case 'r':
+    return BLACK_ROOK;
+  case 'q':
+    return BLACK_QUEEN;
+  case 'k':
+    return BLACK_KING;
+  default:
+    return EMPTY;
+  }
+}

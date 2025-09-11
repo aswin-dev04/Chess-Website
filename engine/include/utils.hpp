@@ -58,5 +58,9 @@ inline Square makeSquare(int rank, int file) {
 PieceType getPieceTypeAt(Board &board, Square square);
 
 int getCaptureCount(Board &board, PieceType pieceType, bool isWhite);
+
+Square stringToSquare(const std::string &square);
+PieceType charToPiece(char c);
+
 } // namespace Utils
 #endif

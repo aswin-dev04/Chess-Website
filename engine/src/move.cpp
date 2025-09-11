@@ -50,8 +50,16 @@ std::ostream &operator<<(std::ostream &os, const Move &move) {
      << squareToString(move.getToSquare()) << " ["
      << pieceToString(move.getPieceType()) << "]";
 
+  if (move.getIsEnPassant()) {
+    os << " (en passant)";
+  }
+
   if (move.getIsCapture()) {
     os << " captures [" << pieceToString(move.getCapturedPiece()) << "]";
+  }
+
+  if (move.getIsPromotion()) {
+    os << " promotes to [" << pieceToString(move.getPromotionPiece()) << "]";
   }
 
   return os;

@@ -179,6 +179,9 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
       if (isCapture) {
         // Find what piece we're capturing
         PieceType capturedPiece = Utils::getPieceTypeAt(board, toSquare);
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
+                                    capturedPiece, false, false, false, true,
+                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
         promotionMoves.emplace_back(
             currPawnSquare, toSquare, pawnPiece, capturedPiece, false, false,
             false, true, isWhite ? WHITE_KNIGHT : BLACK_KNIGHT); // Capture move
@@ -188,11 +191,10 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
         promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
                                     capturedPiece, false, false, false, true,
                                     isWhite ? WHITE_ROOK : BLACK_ROOK);
-        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece,
-                                    capturedPiece, false, false, false, true,
-                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
-
       } else {
+        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
+                                    false, false, false, true,
+                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
         promotionMoves.emplace_back(
             currPawnSquare, toSquare, pawnPiece, EMPTY, false, false, false,
             true, isWhite ? WHITE_KNIGHT : BLACK_KNIGHT); // Normal move
@@ -202,9 +204,6 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
         promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
                                     false, false, false, true,
                                     isWhite ? WHITE_ROOK : BLACK_ROOK);
-        promotionMoves.emplace_back(currPawnSquare, toSquare, pawnPiece, EMPTY,
-                                    false, false, false, true,
-                                    isWhite ? WHITE_QUEEN : BLACK_QUEEN);
       }
     }
   }
@@ -213,68 +212,43 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
 
 std::vector<Move> MoveGeneration::generateEnPassantMoves(Board &board,
                                                          bool isWhite) {
-
   std::vector<Move> enPassantMoves;
+
+  // Get en passant target from FEN
+  Square enPassantTarget = board.getEnPassantSquare();
+  if (enPassantTarget == SQ_NONE) {
+    return {};
+  }
 
   u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
   PieceType pawnPiece = isWhite ? WHITE_PAWN : BLACK_PAWN;
   PieceType capturedPiece = isWhite ? BLACK_PAWN : WHITE_PAWN;
+
+  // Get pawns on the correct rank for en passant (rank 5 for white, rank 4 for
+  // black)
   u64 enPassantPawns =
       isWhite ? pawns & Tables::maskRank[4] : pawns & Tables::maskRank[3];
-
-  if (enPassantPawns == 0)
+  if (enPassantPawns == 0) {
     return {};
+  }
 
-  Move lastMove =
-      !board.getMoveHistory().empty() ? board.getMoveHistory().back() : Move();
-  bool isLastMovePawn = lastMove.getPieceType() == WHITE_PAWN ||
-                        lastMove.getPieceType() == BLACK_PAWN;
+  int targetFile = enPassantTarget % 8;
+  int targetRank = enPassantTarget / 8;
 
-  if (!isLastMovePawn)
-    return {};
-
-  Square fromSq = lastMove.getFromSquare();
-  Square toSq = lastMove.getToSquare();
-  int captureablePawnFile = toSq % 8;
-
-  bool isDoubleMove = isWhite ? fromSq - toSq == 16 : toSq - fromSq == 16;
-
-  if (!isDoubleMove)
-    return {};
-
+  // Check each pawn on the en passant rank
   while (enPassantPawns) {
     Square currPawnSquare = Utils::popLSB(enPassantPawns);
+    int pawnFile = currPawnSquare % 8;
+    int pawnRank = currPawnSquare / 8;
 
-    if (captureablePawnFile - 1 >= 0 &&
-        (currPawnSquare % 8 == captureablePawnFile - 1)) {
-      Square destSq;
+    // Check if this pawn can attack the en passant target diagonally
+    bool canCaptureLeft = (pawnFile - 1 == targetFile);
+    bool canCaptureRight = (pawnFile + 1 == targetFile);
+    bool correctRankRelation =
+        isWhite ? (pawnRank + 1 == targetRank) : (pawnRank - 1 == targetRank);
 
-      if (isWhite)
-        destSq = static_cast<Square>((((currPawnSquare / 8) + 1) * 8) +
-                                     captureablePawnFile);
-
-      else
-        destSq = static_cast<Square>((((currPawnSquare / 8) - 1) * 8) +
-                                     captureablePawnFile);
-
-      enPassantMoves.emplace_back(currPawnSquare, destSq, pawnPiece,
-                                  capturedPiece, true, false, false, false,
-                                  EMPTY);
-    }
-
-    if (captureablePawnFile + 1 <= 7 &&
-        (currPawnSquare % 8 == captureablePawnFile + 1)) {
-      Square destSq;
-
-      if (isWhite)
-        destSq = static_cast<Square>((((currPawnSquare / 8) + 1) * 8) +
-                                     captureablePawnFile);
-
-      else
-        destSq = static_cast<Square>((((currPawnSquare / 8) - 1) * 8) +
-                                     captureablePawnFile);
-
-      enPassantMoves.emplace_back(currPawnSquare, destSq, pawnPiece,
+    if ((canCaptureLeft || canCaptureRight) && correctRankRelation) {
+      enPassantMoves.emplace_back(currPawnSquare, enPassantTarget, pawnPiece,
                                   capturedPiece, true, false, false, false,
                                   EMPTY);
     }
@@ -356,14 +330,11 @@ u64 validMoveBB::blackPawnAttacks(u64 pawnLoc) {
 }
 
 u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
-
   u64 enemyAttacks = 0ULL;
-
   u64 ownPieces =
       isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
   u64 enemyPieces =
       isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
-
   u64 enemyPawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
   u64 enemyKnights =
       isWhite ? board.getWhiteKnights() : board.getBlackKnights();
@@ -376,10 +347,28 @@ u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
   enemyAttacks |= isWhite ? validMoveBB::whitePawnAttacks(enemyPawns)
                           : validMoveBB::blackPawnAttacks(enemyPawns);
   enemyAttacks |= validMoveBB::knightMoves(enemyKnights, enemyPieces);
-  enemyAttacks |=
-      validMoveBB::bishopMoves(enemyBishops, enemyPieces, ownPieces);
-  enemyAttacks |= validMoveBB::rookMoves(enemyRooks, enemyPieces, ownPieces);
-  enemyAttacks |= validMoveBB::queenMoves(enemyQueens, enemyPieces, ownPieces);
+
+  u64 bishops = enemyBishops;
+  while (bishops) {
+    Square bishopSq = Utils::popLSB(bishops);
+    u64 bishop = Utils::squareToBitboard(bishopSq);
+    enemyAttacks |= validMoveBB::bishopMoves(bishop, enemyPieces, ownPieces);
+  }
+
+  u64 rooks = enemyRooks;
+  while (rooks) {
+    Square rookSq = Utils::popLSB(rooks);
+    u64 rook = Utils::squareToBitboard(rookSq);
+    enemyAttacks |= validMoveBB::rookMoves(rook, enemyPieces, ownPieces);
+  }
+
+  u64 queens = enemyQueens;
+  while (queens) {
+    Square queenSq = Utils::popLSB(queens);
+    u64 queen = Utils::squareToBitboard(queenSq);
+    enemyAttacks |= validMoveBB::queenMoves(queen, enemyPieces, ownPieces);
+  }
+
   enemyAttacks |= validMoveBB::kingMoves(enemyKing, enemyPieces);
 
   return enemyAttacks;
