@@ -1,3 +1,5 @@
+#include "../include/ai.hpp"
+#include "../include/evaluation.hpp"
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
 #include <SFML/Graphics.hpp>
@@ -25,6 +27,9 @@ private:
   std::vector<Move> legalMoves;
   std::vector<int> highlightedSquares;
 
+  ChessAI ai;
+  bool aiPlaysBlack = true;
+
 public:
   ChessGUI()
       : window(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
@@ -35,7 +40,7 @@ public:
     legalMoveSquare = sf::Color(0, 255, 0, 128);
     selectedSquareIndex = -1;
 
-    board = Board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+    board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     loadTextures();
   }
@@ -170,15 +175,44 @@ private:
     legalMoves.clear();
   }
 
+  void makeAIMove() {
+    std::cout << "=== BEFORE AI THINKING ===" << std::endl;
+    std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
+
+    Move aiMove = ai.getBestMove(board);
+
+    std::cout << "=== AFTER AI THINKING ===" << std::endl;
+    std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
+
+    if (aiMove.getFromSquare() != aiMove.getToSquare()) {
+      board.makeMove(aiMove);
+      std::cout << "\n\nMade move: " << aiMove << "\n\n" << std::endl;
+      std::cout << "=== AFTER AI MOVE ===" << std::endl;
+      std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
+    }
+  }
+
   void attemptMove(int fromSquare, int toSquare) {
     std::cout << "Attempting move from square " << fromSquare << " to "
               << toSquare << std::endl;
 
+    bool playerPlayed = false;
+
     for (const Move &move : legalMoves) {
       if (move.getFromSquare() == fromSquare &&
-          move.getToSquare() == toSquare) {
+          move.getToSquare() == toSquare && playerPlayed == false) {
         board.makeMove(move);
+        playerPlayed = true;
         std::cout << "Made move: " << move << std::endl;
+        std::cout << "Evaluation: "
+                  << static_cast<float>(Evaluation::evaluate(board)) / 100
+                  << std::endl;
+
+        if (playerPlayed) {
+          makeAIMove();
+          playerPlayed = false;
+        }
+
         return;
       }
     }

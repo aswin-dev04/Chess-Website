@@ -15,6 +15,8 @@ set(SOURCES
     src/movegen.cpp
     src/utils.cpp
     src/tables.cpp    
+    src/ai.cpp
+    src/evaluation.cpp
 )
 
 add_executable(chess_gui ${SOURCES})

@@ -16,6 +16,7 @@ struct undoInfo {
   bool canWhiteCastleQS;
   bool canBlackCastleKS;
   bool canBlackCastleQS;
+  bool whiteToMove;
 };
 class Board {
 private:

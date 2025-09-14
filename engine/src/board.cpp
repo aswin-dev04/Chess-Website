@@ -93,6 +93,7 @@ void Board::makeMove(const Move &move) {
   undo.canWhiteCastleQS = canWhiteCastleQS;
   undo.canBlackCastleKS = canBlackCastleKS;
   undo.canBlackCastleQS = canBlackCastleQS;
+  undo.whiteToMove = whiteToMove;
   stateHistory.push_back(undo);
 
   Square fromSquare = move.getFromSquare();
@@ -122,6 +123,7 @@ void Board::makeMove(const Move &move) {
 
       moveHistory.push_back(move);
       setALLPiecesAggregate();
+      whiteToMove = !whiteToMove;
       return;
     } else {
       Square capturedPawnSquare = static_cast<Square>(toSquare + 8);
@@ -136,6 +138,7 @@ void Board::makeMove(const Move &move) {
 
       moveHistory.push_back(move);
       setALLPiecesAggregate();
+      whiteToMove = !whiteToMove;
       return;
     }
   }
@@ -424,8 +427,7 @@ void Board::undoMove() {
   bool isKingSideCastling = move.getIsKingSideCastle();
   bool isQueenSideCastling = move.getIsQueenSideCastle();
 
-  whiteToMove = !whiteToMove;
-
+  whiteToMove = undo.whiteToMove;
   enPassantSquare = undo.enPassantSquare;
   canWhiteCastleKS = undo.canWhiteCastleKS;
   canWhiteCastleQS = undo.canWhiteCastleQS;

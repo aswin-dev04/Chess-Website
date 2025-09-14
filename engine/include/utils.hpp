@@ -62,5 +62,7 @@ int getCaptureCount(Board &board, PieceType pieceType, bool isWhite);
 Square stringToSquare(const std::string &square);
 PieceType charToPiece(char c);
 
+int getPieceCount(Board &board, PieceType pieceType);
+
 } // namespace Utils
 #endif

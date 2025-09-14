@@ -215,3 +215,34 @@ PieceType Utils::charToPiece(char c) {
     return EMPTY;
   }
 }
+
+int Utils::getPieceCount(Board &board, PieceType pieceType) {
+  switch (pieceType) {
+  case WHITE_PAWN:
+    return Utils::popcount(board.getWhitePawns());
+  case WHITE_KNIGHT:
+    return Utils::popcount(board.getWhiteKnights());
+  case WHITE_BISHOP:
+    return Utils::popcount(board.getWhiteBishops());
+  case WHITE_ROOK:
+    return Utils::popcount(board.getWhiteRooks());
+  case WHITE_QUEEN:
+    return Utils::popcount(board.getWhiteQueens());
+  case WHITE_KING:
+    return Utils::popcount(board.getWhiteKing());
+  case BLACK_PAWN:
+    return Utils::popcount(board.getBlackPawns());
+  case BLACK_KNIGHT:
+    return Utils::popcount(board.getBlackKnights());
+  case BLACK_BISHOP:
+    return Utils::popcount(board.getBlackBishops());
+  case BLACK_ROOK:
+    return Utils::popcount(board.getBlackRooks());
+  case BLACK_QUEEN:
+    return Utils::popcount(board.getBlackQueens());
+  case BLACK_KING:
+    return Utils::popcount(board.getBlackKing());
+  default:
+    return 0;
+  }
+}
