@@ -4,7 +4,8 @@
 
 ChessAI::ChessAI() {}
 
-int ChessAI::minimax(Board &board, int depth, bool maximizingPlayer) {
+int ChessAI::minimax(Board &board, int depth, long long int alpha,
+                     long long int beta, bool maximizingPlayer) {
   if (depth == 0) {
     return Evaluation::evaluate(board);
   }
@@ -27,18 +28,24 @@ int ChessAI::minimax(Board &board, int depth, bool maximizingPlayer) {
     int maxEval = INT_MIN;
     for (Move &move : moves) {
       board.makeMove(move);
-      int eval = minimax(board, depth - 1, false);
+      int eval = minimax(board, depth - 1, alpha, beta, false);
       board.undoMove();
       maxEval = std::max(maxEval, eval);
+      alpha = std::max((long long int)alpha, (long long int)eval);
+      if (beta <= alpha)
+        break;
     }
     return maxEval;
   } else {
     int minEval = INT_MAX;
     for (Move &move : moves) {
       board.makeMove(move);
-      int eval = minimax(board, depth - 1, true);
+      int eval = minimax(board, depth - 1, alpha, beta, true);
       board.undoMove();
       minEval = std::min(minEval, eval);
+      beta = std::min((long long int)beta, (long long int)eval);
+      if (beta <= alpha)
+        break;
     }
     return minEval;
   }
@@ -57,7 +64,7 @@ Move ChessAI::getBestMove(Board &board, int depth) {
 
   for (Move &move : moves) {
     board.makeMove(move);
-    int score = minimax(board, depth - 1, false);
+    int score = minimax(board, depth - 1, INT_MIN, INT_MAX, false);
     board.undoMove();
 
     if (score > bestScore) {

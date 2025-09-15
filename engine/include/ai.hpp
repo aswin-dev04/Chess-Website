@@ -14,10 +14,14 @@ public:
   Move getBestMove(Board &board, int depth); // helper method with depth used in
                                              // the actual getBestMove() method
 
-  int minimax(Board &board, int depth, bool maximizingPlayer);
+  int minimax(Board &board, int depth, long long int alpha, long long int beta,
+              bool maximizingPlayer);
   inline bool isCheckmate(Board &board, bool maximizingPlayer) {
-    return maximizingPlayer ? minimax(board, 1, maximizingPlayer) == INT_MIN
-                            : minimax(board, 1, maximizingPlayer) == INT_MAX;
+    return maximizingPlayer
+               ? minimax(board, 1, INT_MIN, INT_MAX, maximizingPlayer) ==
+                     INT_MIN
+               : minimax(board, 1, INT_MIN, INT_MAX, maximizingPlayer) ==
+                     INT_MAX;
   }
 };
 
