@@ -1,3 +1,5 @@
+// 1K5k/8/8/8/8/8/P7/8 w - - 0 1
+
 #include "../include/ai.hpp"
 #include "../include/evaluation.hpp"
 #include "../include/movegen.hpp"
@@ -27,6 +29,14 @@ private:
   std::vector<Move> legalMoves;
   std::vector<int> highlightedSquares;
 
+  // Promotion selection state
+  bool showingPromotionDialog;
+  int promotionFromSquare;
+  int promotionToSquare;
+  std::vector<Move> promotionMoves; // The 4 promotion move options
+  sf::RectangleShape promotionDialog;
+  std::vector<sf::RectangleShape> promotionButtons;
+
   ChessAI ai;
   bool aiPlaysBlack = true;
 
@@ -39,6 +49,12 @@ public:
     selectedSquare = sf::Color(255, 255, 0, 128);
     legalMoveSquare = sf::Color(0, 255, 0, 128);
     selectedSquareIndex = -1;
+
+    // Initialize promotion dialog state
+    showingPromotionDialog = false;
+    promotionFromSquare = -1;
+    promotionToSquare = -1;
+    setupPromotionDialog();
 
     board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
@@ -53,6 +69,29 @@ public:
   }
 
 private:
+  void setupPromotionDialog() {
+    // Create dialog background
+    promotionDialog.setSize({320.0f, 100.0f});
+    promotionDialog.setPosition(
+        {(WINDOW_WIDTH - 320) / 2.0f, (WINDOW_HEIGHT - 100) / 2.0f});
+    promotionDialog.setFillColor(sf::Color(200, 200, 200, 240));
+    promotionDialog.setOutlineThickness(2);
+    promotionDialog.setOutlineColor(sf::Color::Black);
+
+    // Create 4 buttons for piece selection
+    promotionButtons.clear();
+    for (int i = 0; i < 4; i++) {
+      sf::RectangleShape button;
+      button.setSize({70.0f, 70.0f});
+      button.setPosition({(WINDOW_WIDTH - 320) / 2.0f + 15 + i * 75.0f,
+                          (WINDOW_HEIGHT - 100) / 2.0f + 15});
+      button.setFillColor(sf::Color::White);
+      button.setOutlineThickness(1);
+      button.setOutlineColor(sf::Color::Black);
+      promotionButtons.push_back(button);
+    }
+  }
+
   void loadTextures() {
     auto load = [&](PieceType type, const std::string &filename) {
       sf::Texture texture;
@@ -87,19 +126,100 @@ private:
       if (const auto *mouseButtonPressed =
               event->getIf<sf::Event::MouseButtonPressed>()) {
         if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
-          handleMouseClick(mouseButtonPressed->position.x,
-                           mouseButtonPressed->position.y);
+          if (showingPromotionDialog) {
+            handlePromotionClick(mouseButtonPressed->position.x,
+                                 mouseButtonPressed->position.y);
+          } else {
+            handleMouseClick(mouseButtonPressed->position.x,
+                             mouseButtonPressed->position.y);
+          }
         }
       }
 
       if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        if (keyPressed->code == sf::Keyboard::Key::R) {
-          resetBoard();
-        }
-        if (keyPressed->code == sf::Keyboard::Key::U) {
-          undoMove();
+        if (!showingPromotionDialog) { // Don't handle keyboard when promotion
+                                       // dialog is open
+          if (keyPressed->code == sf::Keyboard::Key::R) {
+            resetBoard();
+          }
+          if (keyPressed->code == sf::Keyboard::Key::U) {
+            undoMove();
+          }
         }
       }
+    }
+  }
+
+  void handlePromotionClick(int x, int y) {
+
+    // Check if click is on one of the promotion buttons
+    for (int i = 0; i < 4; i++) {
+      sf::RectangleShape &button = promotionButtons[i];
+
+      if (x >= button.getPosition().x &&
+          x <= button.getPosition().x + button.getSize().x &&
+          y >= button.getPosition().y &&
+          y <= button.getPosition().y + button.getSize().y) {
+
+        // Find the corresponding promotion move
+        PieceType selectedPromotion;
+        bool isWhite = board.getWhiteToMove();
+
+        switch (i) {
+        case 0:
+          selectedPromotion = isWhite ? WHITE_QUEEN : BLACK_QUEEN;
+          break;
+        case 1:
+          selectedPromotion = isWhite ? WHITE_ROOK : BLACK_ROOK;
+          break;
+        case 2:
+          selectedPromotion = isWhite ? WHITE_BISHOP : BLACK_BISHOP;
+          break;
+        case 3:
+          selectedPromotion = isWhite ? WHITE_KNIGHT : BLACK_KNIGHT;
+          break;
+        }
+
+        std::cout << "Selected promotion piece type: " << selectedPromotion
+                  << std::endl;
+        std::cout << "Available promotion moves (" << promotionMoves.size()
+                  << "):" << std::endl;
+
+        // Find and execute the matching promotion move
+        for (const Move &move : promotionMoves) {
+
+          if (move.getPromotionPiece() == selectedPromotion) {
+            board.makeMove(move);
+            promotionMoves.clear();
+            std::cout << "Evaluation: "
+                      << -(static_cast<float>(Evaluation::evaluate(board)) /
+                           100)
+                      << std::endl;
+
+            // Close promotion dialog
+            showingPromotionDialog = false;
+            deselectSquare();
+
+            // Make AI move after player's promotion
+            makeAIMove();
+            return;
+          }
+        }
+
+        std::cout << "ERROR: No matching promotion move found for piece type "
+                  << selectedPromotion << std::endl;
+        break;
+      }
+    }
+
+    // If clicked outside dialog, cancel promotion
+    if (x < promotionDialog.getPosition().x ||
+        x > promotionDialog.getPosition().x + promotionDialog.getSize().x ||
+        y < promotionDialog.getPosition().y ||
+        y > promotionDialog.getPosition().y + promotionDialog.getSize().y) {
+      std::cout << "Clicked outside promotion dialog - cancelling" << std::endl;
+      showingPromotionDialog = false;
+      deselectSquare();
     }
   }
 
@@ -117,15 +237,10 @@ private:
       return;
     }
 
-    std::cout << "Clicked at screen (" << x << ", " << y << ") -> file:" << file
-              << " rank:" << rank << " square:" << squareIndex << std::endl;
-
     if (selectedSquareIndex == -1) {
       // Check what piece is at this square
       PieceType piece =
           Utils::getPieceTypeAt(board, Utils::makeSquare(rank, file));
-      std::cout << "Piece at position (" << rank << "," << file
-                << "): " << piece << std::endl;
 
       if (piece != EMPTY && isCorrectColorPiece(piece)) {
         selectSquare(squareIndex);
@@ -176,19 +291,16 @@ private:
   }
 
   void makeAIMove() {
-    std::cout << "=== BEFORE AI THINKING ===" << std::endl;
-    std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
 
     Move aiMove = ai.getBestMove(board);
 
-    std::cout << "=== AFTER AI THINKING ===" << std::endl;
-    std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
-
     if (aiMove.getFromSquare() != aiMove.getToSquare()) {
       board.makeMove(aiMove);
-      std::cout << "\n\nMade move: " << aiMove << "\n\n" << std::endl;
-      std::cout << "=== AFTER AI MOVE ===" << std::endl;
-      std::cout << "White to move: " << board.getWhiteToMove() << std::endl;
+      std::cout << "\n\nMade move: " << aiMove << "\nEvaluation: "
+                << static_cast<float>(Evaluation::evaluate(board)) / 100 << "\n"
+                << std::endl;
+      if (ai.isCheckmate(board, false))
+        std::cout << "****** Checkmate! AI wins! ******\n\n" << std::endl;
     }
   }
 
@@ -197,24 +309,53 @@ private:
               << toSquare << std::endl;
 
     bool playerPlayed = false;
+    std::vector<Move> possiblePromotions;
 
+    std::cout << "Checking " << legalMoves.size()
+              << " legal moves:" << std::endl;
+
+    // Check if this is a promotion move
     for (const Move &move : legalMoves) {
+
       if (move.getFromSquare() == fromSquare &&
-          move.getToSquare() == toSquare && playerPlayed == false) {
-        board.makeMove(move);
-        playerPlayed = true;
-        std::cout << "Made move: " << move << std::endl;
-        std::cout << "Evaluation: "
-                  << static_cast<float>(Evaluation::evaluate(board)) / 100
-                  << std::endl;
+          move.getToSquare() == toSquare) {
 
-        if (playerPlayed) {
-          makeAIMove();
-          playerPlayed = false;
+        if (move.getIsPromotion()) {
+          possiblePromotions.push_back(move);
+        } else {
+          // Regular move (non-promotion)
+          board.makeMove(move);
+          playerPlayed = true;
+          std::cout << "Made move: " << move << std::endl;
+          std::cout << "Evaluation: "
+                    << -(static_cast<float>(Evaluation::evaluate(board)) / 100)
+                    << std::endl;
+          if (ai.isCheckmate(board, true))
+            std::cout << "****** Checkmate! You win! ******\n\n" << std::endl;
+
+          if (playerPlayed) {
+            // Clear selection after regular move
+            selectedSquareIndex = -1;
+            highlightedSquares.clear();
+            legalMoves.clear();
+
+            makeAIMove();
+            playerPlayed = false;
+          }
+          return;
         }
-
-        return;
       }
+    }
+
+    // If we found promotion moves, show dialog
+    if (!possiblePromotions.empty()) {
+      promotionMoves = possiblePromotions;
+      promotionFromSquare = fromSquare;
+      promotionToSquare = toSquare;
+      showingPromotionDialog = true;
+      std::cout << "Showing promotion dialog with " << possiblePromotions.size()
+                << " options" << std::endl;
+      return;
     }
 
     std::cout << "Illegal move attempted: " << fromSquare << " to " << toSquare
@@ -223,12 +364,16 @@ private:
 
   void resetBoard() {
     board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    showingPromotionDialog = false;
+    promotionMoves.clear(); // Clear promotion moves when resetting
     deselectSquare();
     std::cout << "Board reset to starting position" << std::endl;
   }
 
   void undoMove() {
     board.undoMove();
+    showingPromotionDialog = false;
+    promotionMoves.clear(); // Clear promotion moves when undoing
     deselectSquare();
     std::cout << "Move undone" << std::endl;
   }
@@ -240,7 +385,55 @@ private:
     drawPieces();
     drawHighlights();
 
+    // Draw promotion dialog on top if active
+    if (showingPromotionDialog) {
+      drawPromotionDialog();
+    }
+
     window.display();
+  }
+
+  void drawPromotionDialog() {
+    // Draw semi-transparent overlay
+    sf::RectangleShape overlay(
+        {static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT)});
+    overlay.setFillColor(sf::Color(0, 0, 0, 128));
+    window.draw(overlay);
+
+    // Draw dialog background
+    window.draw(promotionDialog);
+
+    // Draw buttons and piece icons
+    bool isWhite = board.getWhiteToMove();
+    PieceType pieces[4] = {isWhite ? WHITE_QUEEN : BLACK_QUEEN,
+                           isWhite ? WHITE_ROOK : BLACK_ROOK,
+                           isWhite ? WHITE_BISHOP : BLACK_BISHOP,
+                           isWhite ? WHITE_KNIGHT : BLACK_KNIGHT};
+
+    for (int i = 0; i < 4; i++) {
+      // Draw button background
+      window.draw(promotionButtons[i]);
+
+      // Draw piece sprite on button
+      sf::Sprite pieceSprite(pieceTextures[pieces[i]]);
+      sf::Vector2f buttonPos = promotionButtons[i].getPosition();
+      sf::Vector2f buttonSize = promotionButtons[i].getSize();
+
+      // Scale and center the piece on the button
+      pieceSprite.setScale(
+          {buttonSize.x * 0.8f / pieceSprite.getTexture().getSize().x,
+           buttonSize.y * 0.8f / pieceSprite.getTexture().getSize().y});
+
+      sf::Vector2f spriteSize = {
+          pieceSprite.getTexture().getSize().x * pieceSprite.getScale().x,
+          pieceSprite.getTexture().getSize().y * pieceSprite.getScale().y};
+
+      pieceSprite.setPosition(
+          {buttonPos.x + (buttonSize.x - spriteSize.x) / 2.0f,
+           buttonPos.y + (buttonSize.y - spriteSize.y) / 2.0f});
+
+      window.draw(pieceSprite);
+    }
   }
 
   void drawBoard() {

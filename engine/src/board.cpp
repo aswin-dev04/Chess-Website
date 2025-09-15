@@ -94,6 +94,8 @@ void Board::makeMove(const Move &move) {
   undo.canBlackCastleKS = canBlackCastleKS;
   undo.canBlackCastleQS = canBlackCastleQS;
   undo.whiteToMove = whiteToMove;
+  undo.hasWhiteCastled = hasWhiteCastled;
+  undo.hasBlackCastled = hasBlackCastled;
   stateHistory.push_back(undo);
 
   Square fromSquare = move.getFromSquare();
@@ -288,12 +290,14 @@ void Board::makeMove(const Move &move) {
       rookloc &= ~(Utils::squareToBitboard(H1));
       rookloc |= Utils::squareToBitboard(F1);
       setWhiteRooks(rookloc);
+      hasWhiteCastled = true;
     }
     if (isQueenSideCastling) {
       u64 rookloc = getWhiteRooks();
       rookloc &= ~(Utils::squareToBitboard(A1));
       rookloc |= Utils::squareToBitboard(D1);
       setWhiteRooks(rookloc);
+      hasWhiteCastled = true;
     }
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteKing(currPieceLoc);
@@ -307,12 +311,14 @@ void Board::makeMove(const Move &move) {
       rookloc &= ~(Utils::squareToBitboard(H8));
       rookloc |= Utils::squareToBitboard(F8);
       setBlackRooks(rookloc);
+      hasBlackCastled = true;
     }
     if (isQueenSideCastling) {
       u64 rookloc = getBlackRooks();
       rookloc &= ~(Utils::squareToBitboard(A8));
       rookloc |= Utils::squareToBitboard(D8);
       setBlackRooks(rookloc);
+      hasBlackCastled = true;
     }
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setBlackKing(currPieceLoc);
@@ -433,6 +439,8 @@ void Board::undoMove() {
   canWhiteCastleQS = undo.canWhiteCastleQS;
   canBlackCastleKS = undo.canBlackCastleKS;
   canBlackCastleQS = undo.canBlackCastleQS;
+  hasWhiteCastled = undo.hasWhiteCastled;
+  hasBlackCastled = undo.hasBlackCastled;
 
   moveHistory.pop_back();
 

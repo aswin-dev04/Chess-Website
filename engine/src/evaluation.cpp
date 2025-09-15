@@ -2,23 +2,11 @@
 
 int Evaluation::getKingSafetyScore(Board &board) {
   int score = 0;
-  bool blackCastled = false;
-  bool whiteCastled = false;
 
-  for (const Move &move : board.getMoveHistory()) {
-    if (move.getPieceType() == PieceType::WHITE_KING &&
-        (move.getIsKingSideCastle() || move.getIsQueenSideCastle())) {
-      score += 50;
-      whiteCastled = true;
-    }
-    if (move.getPieceType() == PieceType::BLACK_KING &&
-        (move.getIsKingSideCastle() || move.getIsQueenSideCastle())) {
-      score -= 50;
-      blackCastled = true;
-    }
-    if (blackCastled && whiteCastled)
-      break;
-  }
+  if (board.getHasWhiteCastled())
+    score += 50;
+  if (board.getHasBlackCastled())
+    score -= 50;
 
   return score;
 }

@@ -17,6 +17,8 @@ struct undoInfo {
   bool canBlackCastleKS;
   bool canBlackCastleQS;
   bool whiteToMove;
+  bool hasWhiteCastled;
+  bool hasBlackCastled;
 };
 class Board {
 private:
@@ -45,6 +47,9 @@ private:
   bool canBlackCastleQS = true;
   Square enPassantSquare = SQ_NONE;
   bool whiteToMove = true;
+
+  bool hasWhiteCastled = false;
+  bool hasBlackCastled = false;
 
 public:
   Board();
@@ -159,6 +164,8 @@ public:
   inline bool getCanBlackCastleQS() const { return canBlackCastleQS; }
   inline bool getWhiteToMove() const { return whiteToMove; }
   inline Square getEnPassantSquare() const { return enPassantSquare; }
+  inline bool getHasWhiteCastled() const { return hasWhiteCastled; }
+  inline bool getHasBlackCastled() const { return hasBlackCastled; }
 };
 
 #endif
