@@ -42,6 +42,7 @@ public:
   ~Move() = default;
 
   Move &operator=(const Move &other);
+  bool operator==(const Move &other) const;
 
   // Basic getters
   inline Square getFromSquare() const { return fromSquare; }

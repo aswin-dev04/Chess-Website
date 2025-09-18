@@ -1,5 +1,7 @@
 #include "../include/ai.hpp"
 #include "../include/evaluation.hpp"
+#include "../include/moveorder.hpp"
+#include <algorithm>
 #include <limits.h>
 
 ChessAI::ChessAI() {}
@@ -10,8 +12,7 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     return Evaluation::evaluate(board);
   }
 
-  std::vector<Move> moves =
-      MoveGeneration::generateAllMoves(board, board.getWhiteToMove());
+  std::vector<Move> moves = MoveOrder::getOrderedMoves(board);
 
   if (moves.empty()) {
     bool currentPlayerTurn = board.getWhiteToMove();
@@ -51,27 +52,38 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
   }
 }
 
-Move ChessAI::getBestMove(Board &board) { return getBestMove(board, 4); }
-
-Move ChessAI::getBestMove(Board &board, int depth) {
-  std::vector<Move> moves =
-      MoveGeneration::generateAllMoves(board, board.getWhiteToMove());
+Move ChessAI::getBestMove(Board &board, int maxDepth) {
+  std::vector<Move> moves = MoveOrder::getOrderedMoves(board);
   if (moves.empty())
-    return Move(); // No legal moves
+    return Move();
 
   Move bestMove = moves[0];
-  int bestScore = INT_MIN;
 
-  for (Move &move : moves) {
-    board.makeMove(move);
-    int score = minimax(board, depth - 1, INT_MIN, INT_MAX, false);
-    board.undoMove();
+  for (int currentDepth = 1; currentDepth <= maxDepth; currentDepth++) {
+    int bestScore = INT_MIN;
+    Move currentBestMove = moves[0];
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
+    for (Move &move : moves) {
+      board.makeMove(move);
+      int score = minimax(board, currentDepth - 1, INT_MIN, INT_MAX, false);
+      board.undoMove();
+
+      if (score > bestScore) {
+        bestScore = score;
+        currentBestMove = move;
+      }
+    }
+
+    bestMove = currentBestMove;
+
+    auto it = std::find(moves.begin(), moves.end(), bestMove);
+    if (it != moves.end()) {
+      moves.erase(it);
+      moves.insert(moves.begin(), bestMove);
     }
   }
 
   return bestMove;
 }
+
+Move ChessAI::getBestMove(Board &board) { return getBestMove(board, 4); }

@@ -17,6 +17,7 @@ set(SOURCES
     src/tables.cpp    
     src/ai.cpp
     src/evaluation.cpp
+    src/moveorder.cpp
 )
 
 add_executable(chess_gui ${SOURCES})
