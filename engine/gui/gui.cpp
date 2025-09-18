@@ -56,7 +56,7 @@ public:
     promotionToSquare = -1;
     setupPromotionDialog();
 
-    board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    board = Board("4k3/8/8/8/8/8/PPPPPPPP/4K3 w KQkq - 0 1");
 
     loadTextures();
   }

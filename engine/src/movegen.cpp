@@ -313,10 +313,9 @@ std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
 
 u64 validMoveBB::whitePawnAttacks(u64 pawnLoc) {
   u64 attacks = 0ULL;
-  // Left attacks (northwest)
-  attacks |= (pawnLoc << 7) & Tables::clearFile[0];
+  attacks |= (pawnLoc & Tables::clearFile[0]) << 7;
   // Right attacks (northeast)
-  attacks |= (pawnLoc << 9) & Tables::clearFile[7];
+  attacks |= (pawnLoc & Tables::clearFile[7]) << 9;
   return attacks;
 }
 

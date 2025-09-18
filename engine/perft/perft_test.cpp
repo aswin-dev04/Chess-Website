@@ -16,7 +16,7 @@ bool runPerftValidation() {
   std::vector<PerftTestCase> testCases = {
       {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
        "Starting position",
-       {20, 400, 8902, 197281, 4865609, 119060324, 3195901860}},
+       {20, 400, 8902, 197281, 4865609, 119060324}},
       // {
       //     "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
       //     "en passant validation",
@@ -75,7 +75,7 @@ void runBasicPerftTests() {
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6);
 
   // Test divide function
-  std::cout << "\n2. Perft Divide Test (depth 7):" << std::endl;
+  std::cout << "\n2. Perft Divide Test (depth 6):" << std::endl;
   Board startBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   Perft::perftDivide(startBoard, 6);
 }

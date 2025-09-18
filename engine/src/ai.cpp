@@ -12,7 +12,12 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     return Evaluation::evaluate(board);
   }
 
-  std::vector<Move> moves = MoveOrder::getOrderedMoves(board);
+  std::vector<Move> moves;
+
+  if (depth >= 3)
+    moves = MoveOrder::getOrderedMoves(board);
+  else
+    moves = MoveGeneration::generateAllMoves(board, board.getWhiteToMove());
 
   if (moves.empty()) {
     bool currentPlayerTurn = board.getWhiteToMove();
