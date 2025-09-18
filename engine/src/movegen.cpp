@@ -322,9 +322,9 @@ u64 validMoveBB::whitePawnAttacks(u64 pawnLoc) {
 u64 validMoveBB::blackPawnAttacks(u64 pawnLoc) {
   u64 attacks = 0ULL;
   // Left attacks (southwest)
-  attacks |= (pawnLoc >> 9) & Tables::clearFile[0];
+  attacks |= (pawnLoc & Tables::clearFile[0]) >> 9;
   // Right attacks (southeast)
-  attacks |= (pawnLoc >> 7) & Tables::clearFile[7];
+  attacks |= (pawnLoc & Tables::clearFile[7]) >> 7;
   return attacks;
 }
 
