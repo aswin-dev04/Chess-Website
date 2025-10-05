@@ -1,4 +1,5 @@
 #include "../include/movegen.hpp"
+#include "../include/magic.hpp"
 #include "../include/utils.hpp"
 
 u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
@@ -378,61 +379,10 @@ u64 validMoveBB::rookMoves(u64 rookLoc, u64 ownPieces, u64 enemyPieces) {
   if (rookLoc == 0ULL)
     return 0ULL;
 
-  u64 moves = 0ULL;
-  u64 blockers = ownPieces | enemyPieces;
-
   Square sq = Utils::bitboardToSquare(rookLoc);
+  u64 occupied = ownPieces | enemyPieces;
 
-  int rank = sq / 8;
-  int file = sq % 8;
-
-  // North (increasing rank)
-  for (int r = rank + 1; r < 8; r++) {
-    int targetSq = r * 8 + file;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;         // add move
-    if (blockers & targetBB) { // stop if blocked
-      break;
-    }
-  }
-
-  // South (decreasing rank)
-  for (int r = rank - 1; r >= 0; r--) {
-    int targetSq = r * 8 + file;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  // East (increasing file)
-  for (int f = file + 1; f < 8; f++) {
-    int targetSq = rank * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  // West (decreasing file)
-  for (int f = file - 1; f >= 0; f--) {
-    int targetSq = rank * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  moves &= ~ownPieces;
-
-  return moves;
+  return Magic::getRookAttacks(sq, occupied) & ~ownPieces;
 }
 
 std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
@@ -472,64 +422,13 @@ std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
 
 u64 validMoveBB::bishopMoves(u64 bishopLoc, u64 ownPieces, u64 enemyPieces) {
 
-  if (bishopLoc == 0)
+  if (bishopLoc == 0ULL)
     return 0ULL;
 
-  u64 moves = 0ULL;
-  u64 blockers = ownPieces | enemyPieces;
-
   Square sq = Utils::bitboardToSquare(bishopLoc);
+  u64 occupied = ownPieces | enemyPieces;
 
-  int rank = sq / 8;
-  int file = sq % 8;
-
-  // Northeast (increasing rank and file)
-  for (int r = rank + 1, f = file + 1; r < 8 && f < 8; r++, f++) {
-    int targetSq = r * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  // Northwest (increasing rank and decreasing file)
-  for (int r = rank + 1, f = file - 1; r < 8 && f >= 0; r++, f--) {
-    int targetSq = r * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  // Southeast (decreasing rank and increasing file)
-  for (int r = rank - 1, f = file + 1; r >= 0 && f < 8; r--, f++) {
-    int targetSq = r * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  // Southwest (decreasing rank and decreasing file)
-  for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
-    int targetSq = r * 8 + f;
-    u64 targetBB = Utils::squareToBitboard(targetSq);
-
-    moves |= targetBB;
-    if (blockers & targetBB) {
-      break;
-    }
-  }
-
-  moves &= ~ownPieces;
-
-  return moves;
+  return Magic::getBishopAttacks(sq, occupied) & ~ownPieces;
 }
 
 std::vector<Move> MoveGeneration::generateBishopMoves(Board &board,

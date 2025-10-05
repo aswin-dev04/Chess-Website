@@ -2,6 +2,7 @@
 
 #include "../include/ai.hpp"
 #include "../include/evaluation.hpp"
+#include "../include/magic.hpp"
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
 #include <SFML/Graphics.hpp>
@@ -56,7 +57,7 @@ public:
     promotionToSquare = -1;
     setupPromotionDialog();
 
-    board = Board("4k3/8/8/8/8/8/PPPPPPPP/4K3 w KQkq - 0 1");
+    board = Board("k7/8/8/8/4R3/8/8/4K3 w KQkq - 0 1");
 
     loadTextures();
   }
@@ -515,6 +516,7 @@ private:
 };
 
 int main() {
+  Magic::initMagics();
   ChessGUI gui;
   gui.run();
   return 0;

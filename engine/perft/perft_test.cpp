@@ -1,3 +1,4 @@
+#include "../include/magic.hpp"
 #include "../include/perft.hpp"
 #include <cassert>
 #include <fstream>
@@ -72,10 +73,10 @@ void runBasicPerftTests() {
   // Test starting position
   std::cout << "\n1. Starting Position Test:" << std::endl;
   Perft::runPerftTest(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6);
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7);
 
   // Test divide function
-  std::cout << "\n2. Perft Divide Test (depth 6):" << std::endl;
+  std::cout << "\n2. Perft Divide Test (depth 3):" << std::endl;
   Board startBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   Perft::perftDivide(startBoard, 6);
 }
@@ -129,6 +130,7 @@ void runBasicPerftTests() {
 // }
 
 int main() {
+  Magic::initMagics();
   std::cout << "Starting Perft Tests..." << std::endl;
 
   // Run basic tests
