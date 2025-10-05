@@ -21,6 +21,7 @@ set(SOURCES
 )
 
 add_executable(chess_gui ${SOURCES})
+target_compile_options(chess_gui PRIVATE -O3)
 
 target_link_libraries(chess_gui
     sfml-graphics

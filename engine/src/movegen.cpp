@@ -641,100 +641,202 @@ std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
   return legalKingMoves;
 }
 
-std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,
-                                                           bool isWhite) {
-
-  std::vector<Move> legalKnightMoves;
-
-  std::vector<Move> pseudoLegalKnightMoves =
-      generateKnightMoves(board, isWhite);
-  for (const Move &move : pseudoLegalKnightMoves) {
-    board.makeMove(move);
-    if (!board.isKingChecked(isWhite)) {
-      legalKnightMoves.push_back(move);
-    }
-    board.undoMove();
-  }
-  return legalKnightMoves;
-}
+// std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board& board, bool
+// isWhite, bool inCheck, u64 pinnedPieces) {
+//     std::vector<Move> pseudoLegal = generatePawnMoves(board, isWhite);
+//
+//     std::vector<Move> legal;
+//     legal.reserve(pseudoLegal.size());
+//
+//     for (const Move& move : pseudoLegal) {
+//         board.makeMove(move);
+//         if (!board.isKingChecked(isWhite)) {
+//             legal.push_back(move);
+//         }
+//         board.undoMove();
+//     }
+//
+//     return legal;
+// }
 
 std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board &board,
-                                                         bool isWhite) {
+                                                         bool isWhite,
+                                                         bool inCheck,
+                                                         u64 pinnedPieces) {
+  std::vector<Move> pseudoLegal = generatePawnMoves(board, isWhite);
 
-  std::vector<Move> legalPawnMoves;
+  std::vector<Move> legal;
+  legal.reserve(pseudoLegal.size());
 
-  std::vector<Move> pseudoLegalPawnMoves = generatePawnMoves(board, isWhite);
-  for (const Move &move : pseudoLegalPawnMoves) {
+  for (const Move &move : pseudoLegal) {
+    Square fromSq = move.getFromSquare();
+    u64 fromBB = Utils::squareToBitboard(fromSq);
+
+    // Fast path: non-pinned, non-en-passant moves when not in check
+    if (!inCheck && (fromBB & pinnedPieces) == 0 && !move.getIsEnPassant()) {
+      legal.push_back(move);
+      continue;
+    }
+
     board.makeMove(move);
     if (!board.isKingChecked(isWhite)) {
-      legalPawnMoves.push_back(move);
+      legal.push_back(move);
     }
     board.undoMove();
   }
-  return legalPawnMoves;
+
+  return legal;
+}
+
+std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,
+                                                           bool isWhite,
+                                                           bool inCheck,
+                                                           u64 pinnedPieces) {
+  std::vector<Move> pseudoLegal = generateKnightMoves(board, isWhite);
+
+  if (!inCheck && pinnedPieces == 0ULL) {
+    return pseudoLegal;
+  }
+
+  std::vector<Move> legal;
+  legal.reserve(pseudoLegal.size());
+
+  for (const Move &move : pseudoLegal) {
+    Square fromSq = move.getFromSquare();
+    u64 fromBB = Utils::squareToBitboard(fromSq);
+
+    if ((fromBB & pinnedPieces) != 0) {
+      continue;
+    }
+
+    if (!inCheck) {
+      legal.push_back(move);
+      continue;
+    }
+
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legal.push_back(move);
+    }
+    board.undoMove();
+  }
+
+  return legal;
+}
+std::vector<Move> MoveGeneration::generateBishopLegalMoves(Board &board,
+                                                           bool isWhite,
+                                                           bool inCheck,
+                                                           u64 pinnedPieces) {
+  std::vector<Move> pseudoLegal = generateBishopMoves(board, isWhite);
+
+  if (!inCheck && pinnedPieces == 0ULL) {
+    return pseudoLegal;
+  }
+
+  std::vector<Move> legal;
+  legal.reserve(pseudoLegal.size());
+
+  for (const Move &move : pseudoLegal) {
+    Square fromSq = move.getFromSquare();
+    u64 fromBB = Utils::squareToBitboard(fromSq);
+
+    if (!inCheck && (fromBB & pinnedPieces) == 0) {
+      legal.push_back(move);
+      continue;
+    }
+
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legal.push_back(move);
+    }
+    board.undoMove();
+  }
+
+  return legal;
 }
 
 std::vector<Move> MoveGeneration::generateRookLegalMoves(Board &board,
-                                                         bool isWhite) {
+                                                         bool isWhite,
+                                                         bool inCheck,
+                                                         u64 pinnedPieces) {
+  std::vector<Move> pseudoLegal = generateRookMoves(board, isWhite);
 
-  std::vector<Move> legalRookMoves;
+  if (!inCheck && pinnedPieces == 0ULL) {
+    return pseudoLegal;
+  }
 
-  std::vector<Move> pseudoLegalRookMoves = generateRookMoves(board, isWhite);
-  for (const Move &move : pseudoLegalRookMoves) {
+  std::vector<Move> legal;
+  legal.reserve(pseudoLegal.size());
+
+  for (const Move &move : pseudoLegal) {
+    Square fromSq = move.getFromSquare();
+    u64 fromBB = Utils::squareToBitboard(fromSq);
+
+    if (!inCheck && (fromBB & pinnedPieces) == 0) {
+      legal.push_back(move);
+      continue;
+    }
+
     board.makeMove(move);
     if (!board.isKingChecked(isWhite)) {
-      legalRookMoves.push_back(move);
+      legal.push_back(move);
     }
     board.undoMove();
   }
-  return legalRookMoves;
-}
 
-std::vector<Move> MoveGeneration::generateBishopLegalMoves(Board &board,
-                                                           bool isWhite) {
-
-  std::vector<Move> legalBishopMoves;
-
-  std::vector<Move> pseudoLegalBishopMoves =
-      generateBishopMoves(board, isWhite);
-  for (const Move &move : pseudoLegalBishopMoves) {
-    board.makeMove(move);
-    if (!board.isKingChecked(isWhite)) {
-      legalBishopMoves.push_back(move);
-    }
-    board.undoMove();
-  }
-  return legalBishopMoves;
+  return legal;
 }
 
 std::vector<Move> MoveGeneration::generateQueenLegalMoves(Board &board,
-                                                          bool isWhite) {
+                                                          bool isWhite,
+                                                          bool inCheck,
+                                                          u64 pinnedPieces) {
+  std::vector<Move> pseudoLegal = generateQueenMoves(board, isWhite);
 
-  std::vector<Move> legalQueenMoves;
+  if (!inCheck && pinnedPieces == 0ULL) {
+    return pseudoLegal;
+  }
 
-  std::vector<Move> pseudoLegalQueenMoves = generateQueenMoves(board, isWhite);
-  for (const Move &move : pseudoLegalQueenMoves) {
+  std::vector<Move> legal;
+  legal.reserve(pseudoLegal.size());
+
+  for (const Move &move : pseudoLegal) {
+    Square fromSq = move.getFromSquare();
+    u64 fromBB = Utils::squareToBitboard(fromSq);
+
+    if (!inCheck && (fromBB & pinnedPieces) == 0) {
+      legal.push_back(move);
+      continue;
+    }
+
     board.makeMove(move);
     if (!board.isKingChecked(isWhite)) {
-      legalQueenMoves.push_back(move);
+      legal.push_back(move);
     }
     board.undoMove();
   }
-  return legalQueenMoves;
+
+  return legal;
 }
 
 std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
-
   std::vector<Move> allMoves;
 
-  std::vector<Move> pawnMoves = generatePawnLegalMoves(board, isWhite);
-  std::vector<Move> knightMoves = generateKnightLegalMoves(board, isWhite);
-  std::vector<Move> bishopMoves = generateBishopLegalMoves(board, isWhite);
-  std::vector<Move> rookMoves = generateRookLegalMoves(board, isWhite);
-  std::vector<Move> queenMoves = generateQueenLegalMoves(board, isWhite);
+  bool inCheck = board.isKingChecked(isWhite);
+  u64 pinnedPieces = board.getPinnedPieces(isWhite);
+
+  std::vector<Move> pawnMoves =
+      generatePawnLegalMoves(board, isWhite, inCheck, pinnedPieces);
+  std::vector<Move> knightMoves =
+      generateKnightLegalMoves(board, isWhite, inCheck, pinnedPieces);
+  std::vector<Move> bishopMoves =
+      generateBishopLegalMoves(board, isWhite, inCheck, pinnedPieces);
+  std::vector<Move> rookMoves =
+      generateRookLegalMoves(board, isWhite, inCheck, pinnedPieces);
+  std::vector<Move> queenMoves =
+      generateQueenLegalMoves(board, isWhite, inCheck, pinnedPieces);
   std::vector<Move> kingMoves = generateKingLegalMoves(board, isWhite);
 
-  // Append all to one vector
   allMoves.insert(allMoves.end(), pawnMoves.begin(), pawnMoves.end());
   allMoves.insert(allMoves.end(), knightMoves.begin(), knightMoves.end());
   allMoves.insert(allMoves.end(), bishopMoves.begin(), bishopMoves.end());
@@ -742,7 +844,7 @@ std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
   allMoves.insert(allMoves.end(), queenMoves.begin(), queenMoves.end());
   allMoves.insert(allMoves.end(), kingMoves.begin(), kingMoves.end());
 
-  if (board.isKingChecked(isWhite)) {
+  if (inCheck) {
     if (board.getAttackersCount(isWhite) > 1)
       return kingMoves;
     return generateLegalMovesWhileInCheck(board, isWhite, allMoves);
@@ -750,7 +852,6 @@ std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
 
   return allMoves;
 }
-
 std::vector<Move>
 MoveGeneration::generateLegalMovesWhileInCheck(Board &board, bool isWhite,
                                                std::vector<Move> allMoves) {

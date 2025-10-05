@@ -1,36 +1,54 @@
 # ===== C++ / Build artifacts =====
-/engine/build/
-/engine/*.o
-/engine/*.obj
-/engine/*.exe
-/engine/*.out
-/engine/CMakeFiles/
-/engine/CMakeCache.txt
-/engine/*.log
-*.gch
-*.pch
+**/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/*.o
+**/*.obj
+**/*.exe
+**/*.out
+**/*.gch
+**/*.pch
+**/*.d
+**/*.log
+**/*.txt
+!**/CMakeLists.txt
+!README.txt
+!LICENSE.txt
+
+# Compiled test binaries
+engine/perft/perft_test
+engine/tests/engine_tests
+
+# CMake generated files
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Test directories and scripts
+engine/tests/
+engine/perft/
+**/*.sh
 
 # ===== Node.js / backend =====
-/backend/node_modules/
-/backend/npm-debug.log
-/backend/yarn-error.log
-/backend/.env
+backend/node_modules/
+backend/npm-debug.log
+backend/yarn-error.log
+backend/.env
 
 # ===== React / frontend =====
-/frontend/node_modules/
-/frontend/build/
-/frontend/.env
-/frontend/.cache/
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.cache/
 
 # ===== IDE / Editor files =====
 *.swp
 *.swo
-*.DS_Store
-*.vscode/
-*.idea/
+.DS_Store
+.vscode/
+.idea/
 
 # ===== Misc =====
-*.log
 *.tmp
-*.bak
-
+*.bak.bak

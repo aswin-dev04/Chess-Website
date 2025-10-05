@@ -166,6 +166,8 @@ public:
   inline Square getEnPassantSquare() const { return enPassantSquare; }
   inline bool getHasWhiteCastled() const { return hasWhiteCastled; }
   inline bool getHasBlackCastled() const { return hasBlackCastled; }
+
+  u64 getPinnedPieces(bool isWhite);
 };
 
 #endif

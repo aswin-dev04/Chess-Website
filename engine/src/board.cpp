@@ -961,3 +961,66 @@ void Board::loadFromFen(const std::string &fen) {
   // Update aggregate bitboards
   setALLPiecesAggregate();
 }
+
+u64 Board::getPinnedPieces(bool isWhite) {
+  u64 pinned = 0ULL;
+  u64 kingLoc = isWhite ? getWhiteKing() : getBlackKing();
+  Square kingSquare = Utils::bitboardToSquare(kingLoc);
+
+  u64 ownPieces = isWhite ? getAllWhitePieces() : getAllBlackPieces();
+  u64 enemyPieces = isWhite ? getAllBlackPieces() : getAllWhitePieces();
+
+  // Check diagonal sliders (bishops and queens)
+  u64 enemyDiagonalSliders = isWhite ? (getBlackBishops() | getBlackQueens())
+                                     : (getWhiteBishops() | getWhiteQueens());
+
+  while (enemyDiagonalSliders) {
+    Square attackerSq = Utils::popLSB(enemyDiagonalSliders);
+    u64 attacker = Utils::squareToBitboard(attackerSq);
+
+    // Get all squares this slider can reach with no blockers
+    u64 fullRay = validMoveBB::bishopMoves(attacker, 0ULL, 0ULL);
+
+    // If king is not on this ray, skip
+    if ((fullRay & kingLoc) == 0)
+      continue;
+
+    // Get squares between attacker and king
+    u64 rayToKing = validMoveBB::bishopMoves(attacker, 0ULL, kingLoc);
+    u64 rayFromKing = validMoveBB::bishopMoves(kingLoc, 0ULL, attacker);
+    u64 betweenSquares = rayToKing & rayFromKing;
+
+    // Check pieces between attacker and king
+    u64 piecesInBetween = betweenSquares & ownPieces;
+
+    // If exactly 1 of our pieces is between them, it's pinned
+    if (Utils::popcount(piecesInBetween) == 1) {
+      pinned |= piecesInBetween;
+    }
+  }
+
+  // Check orthogonal sliders (rooks and queens)
+  u64 enemyOrthogonalSliders = isWhite ? (getBlackRooks() | getBlackQueens())
+                                       : (getWhiteRooks() | getWhiteQueens());
+
+  while (enemyOrthogonalSliders) {
+    Square attackerSq = Utils::popLSB(enemyOrthogonalSliders);
+    u64 attacker = Utils::squareToBitboard(attackerSq);
+
+    u64 fullRay = validMoveBB::rookMoves(attacker, 0ULL, 0ULL);
+    if ((fullRay & kingLoc) == 0)
+      continue;
+
+    u64 rayToKing = validMoveBB::rookMoves(attacker, 0ULL, kingLoc);
+    u64 rayFromKing = validMoveBB::rookMoves(kingLoc, 0ULL, attacker);
+    u64 betweenSquares = rayToKing & rayFromKing;
+
+    u64 piecesInBetween = betweenSquares & ownPieces;
+
+    if (Utils::popcount(piecesInBetween) == 1) {
+      pinned |= piecesInBetween;
+    }
+  }
+
+  return pinned;
+}

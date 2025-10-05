@@ -44,13 +44,23 @@ public:
 
   // non-sliding pieces
   static std::vector<Move> generateKingLegalMoves(Board &board, bool isWhite);
-  static std::vector<Move> generateKnightLegalMoves(Board &board, bool isWhite);
-  static std::vector<Move> generatePawnLegalMoves(Board &board, bool isWhite);
+  static std::vector<Move> generateKnightLegalMoves(Board &board, bool isWhite,
+                                                    bool inCheck,
+                                                    u64 pinnedPieces);
+  static std::vector<Move> generatePawnLegalMoves(Board &board, bool isWhite,
+                                                  bool inCheck,
+                                                  u64 pinnedPieces);
 
   // sliding pieces
-  static std::vector<Move> generateRookLegalMoves(Board &board, bool isWhite);
-  static std::vector<Move> generateBishopLegalMoves(Board &board, bool isWhite);
-  static std::vector<Move> generateQueenLegalMoves(Board &board, bool isWhite);
+  static std::vector<Move> generateRookLegalMoves(Board &board, bool isWhite,
+                                                  bool inCheck,
+                                                  u64 pinnedPieces);
+  static std::vector<Move> generateBishopLegalMoves(Board &board, bool isWhite,
+                                                    bool inCheck,
+                                                    u64 pinnedPieces);
+  static std::vector<Move> generateQueenLegalMoves(Board &board, bool isWhite,
+                                                   bool inCheck,
+                                                   u64 pinnedPieces);
 
   // special moves
   static std::vector<Move> generatePawnPromotionMoves(Board &board, u64 pawnLoc,
