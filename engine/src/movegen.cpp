@@ -335,6 +335,8 @@ u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
       isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
   u64 enemyPieces =
       isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 allPieces = ownPieces | enemyPieces; // Total occupancy
+
   u64 enemyPawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
   u64 enemyKnights =
       isWhite ? board.getWhiteKnights() : board.getBlackKnights();
@@ -344,31 +346,36 @@ u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
   u64 enemyQueens = isWhite ? board.getWhiteQueens() : board.getBlackQueens();
   u64 enemyKing = isWhite ? board.getWhiteKing() : board.getBlackKing();
 
+  // Pawns
   enemyAttacks |= isWhite ? validMoveBB::whitePawnAttacks(enemyPawns)
                           : validMoveBB::blackPawnAttacks(enemyPawns);
+
+  // Knights
   enemyAttacks |= validMoveBB::knightMoves(enemyKnights, enemyPieces);
 
+  // Bishops - optimized to use Square directly
   u64 bishops = enemyBishops;
   while (bishops) {
     Square bishopSq = Utils::popLSB(bishops);
-    u64 bishop = Utils::squareToBitboard(bishopSq);
-    enemyAttacks |= validMoveBB::bishopMoves(bishop, enemyPieces, ownPieces);
+    enemyAttacks |= Magic::getBishopAttacks(bishopSq, allPieces);
   }
 
+  // Rooks - optimized to use Square directly
   u64 rooks = enemyRooks;
   while (rooks) {
     Square rookSq = Utils::popLSB(rooks);
-    u64 rook = Utils::squareToBitboard(rookSq);
-    enemyAttacks |= validMoveBB::rookMoves(rook, enemyPieces, ownPieces);
+    enemyAttacks |= Magic::getRookAttacks(rookSq, allPieces);
   }
 
+  // Queens - bishops + rooks
   u64 queens = enemyQueens;
   while (queens) {
     Square queenSq = Utils::popLSB(queens);
-    u64 queen = Utils::squareToBitboard(queenSq);
-    enemyAttacks |= validMoveBB::queenMoves(queen, enemyPieces, ownPieces);
+    enemyAttacks |= Magic::getBishopAttacks(queenSq, allPieces);
+    enemyAttacks |= Magic::getRookAttacks(queenSq, allPieces);
   }
 
+  // King
   enemyAttacks |= validMoveBB::kingMoves(enemyKing, enemyPieces);
 
   return enemyAttacks;
@@ -539,24 +546,6 @@ std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
   }
   return legalKingMoves;
 }
-
-// std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board& board, bool
-// isWhite, bool inCheck, u64 pinnedPieces) {
-//     std::vector<Move> pseudoLegal = generatePawnMoves(board, isWhite);
-//
-//     std::vector<Move> legal;
-//     legal.reserve(pseudoLegal.size());
-//
-//     for (const Move& move : pseudoLegal) {
-//         board.makeMove(move);
-//         if (!board.isKingChecked(isWhite)) {
-//             legal.push_back(move);
-//         }
-//         board.undoMove();
-//     }
-//
-//     return legal;
-// }
 
 std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board &board,
                                                          bool isWhite,

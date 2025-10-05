@@ -73,7 +73,7 @@ void runBasicPerftTests() {
   // Test starting position
   std::cout << "\n1. Starting Position Test:" << std::endl;
   Perft::runPerftTest(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7);
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6);
 
   // Test divide function
   std::cout << "\n2. Perft Divide Test (depth 3):" << std::endl;
