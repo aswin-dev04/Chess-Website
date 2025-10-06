@@ -56,7 +56,6 @@ inline Square makeSquare(int rank, int file) {
 
 // Get piece type at square
 PieceType getPieceTypeAt(Board &board, Square square);
-
 int getCaptureCount(Board &board, PieceType pieceType, bool isWhite);
 
 Square stringToSquare(const std::string &square);

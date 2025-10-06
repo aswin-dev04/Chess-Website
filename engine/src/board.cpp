@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+Zobrist Board::zobrist;
+
 Board::Board() {
   setWhitePawns();
   setBlackPawns();
@@ -21,6 +23,7 @@ Board::Board() {
   setALLPiecesAggregate();
   stateHistory = {};
   moveHistory = {};
+  initZobristHash();
 }
 
 Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
@@ -41,12 +44,14 @@ Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
   setALLPiecesAggregate();
   stateHistory = {};
   moveHistory = {};
+  initZobristHash();
 }
 
 Board::Board(const std::string &fen) {
   loadFromFen(fen);
   stateHistory = {};
   moveHistory = {};
+  initZobristHash();
 }
 
 Board &Board::operator=(const Board &other) {
@@ -96,6 +101,7 @@ void Board::makeMove(const Move &move) {
   undo.whiteToMove = whiteToMove;
   undo.hasWhiteCastled = hasWhiteCastled;
   undo.hasBlackCastled = hasBlackCastled;
+  undo.zobristHash = zobristHash;
   stateHistory.push_back(undo);
 
   Square fromSquare = move.getFromSquare();
@@ -108,15 +114,29 @@ void Board::makeMove(const Move &move) {
   bool isKingSideCastling = move.getIsKingSideCastle();
   bool isQueenSideCastling = move.getIsQueenSideCastle();
 
+  int oldCastlingRights =
+      (canWhiteCastleKS ? 1 : 0) | (canWhiteCastleQS ? 2 : 0) |
+      (canBlackCastleKS ? 4 : 0) | (canBlackCastleQS ? 8 : 0);
+
+  if (enPassantSquare != SQ_NONE) {
+    zobristHash ^= zobrist.getEnPassantKey(enPassantSquare);
+  }
+
   u64 currPieceLoc = 0ULL;
   u64 capturedPieceLoc = 0ULL;
 
   if (isEnPassant) {
     if (piece == WHITE_PAWN) {
       Square capturedPawnSquare = static_cast<Square>(toSquare - 8);
+
+      zobristHash ^= zobrist.getPieceKey(capturedPawnSquare, BLACK_PAWN);
+
       u64 enemyPawns = getBlackPawns();
       enemyPawns &= ~(Utils::squareToBitboard(capturedPawnSquare));
       setBlackPawns(enemyPawns);
+
+      zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_PAWN);
+      zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_PAWN);
 
       u64 ownPawns = getWhitePawns();
       ownPawns &= ~(Utils::squareToBitboard(fromSquare));
@@ -125,13 +145,20 @@ void Board::makeMove(const Move &move) {
 
       moveHistory.push_back(move);
       setALLPiecesAggregate();
+
+      zobristHash ^= zobrist.getBlackToMoveKey();
+
       whiteToMove = !whiteToMove;
       return;
     } else {
       Square capturedPawnSquare = static_cast<Square>(toSquare + 8);
+      zobristHash ^= zobrist.getPieceKey(capturedPawnSquare, WHITE_PAWN);
       u64 enemyPawns = getWhitePawns();
       enemyPawns &= ~(Utils::squareToBitboard(capturedPawnSquare));
       setWhitePawns(enemyPawns);
+
+      zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_PAWN);
+      zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_PAWN);
 
       u64 ownPawns = getBlackPawns();
       ownPawns &= ~(Utils::squareToBitboard(fromSquare));
@@ -140,6 +167,9 @@ void Board::makeMove(const Move &move) {
 
       moveHistory.push_back(move);
       setALLPiecesAggregate();
+
+      zobristHash ^= zobrist.getBlackToMoveKey();
+
       whiteToMove = !whiteToMove;
       return;
     }
@@ -149,10 +179,14 @@ void Board::makeMove(const Move &move) {
   case EMPTY:
     break;
   case WHITE_PAWN:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_PAWN);
+
     currPieceLoc = getWhitePawns();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
+
     if (isPromotion) {
       PieceType promotedPiece = move.getPromotionPiece();
+      zobristHash ^= zobrist.getPieceKey(toSquare, promotedPiece);
 
       switch (promotedPiece) {
       case WHITE_QUEEN: {
@@ -161,21 +195,18 @@ void Board::makeMove(const Move &move) {
         setWhiteQueens(promoPieces);
         break;
       }
-
       case WHITE_ROOK: {
         u64 promoPieces = getWhiteRooks();
         promoPieces |= Utils::squareToBitboard(toSquare);
         setWhiteRooks(promoPieces);
         break;
       }
-
       case WHITE_BISHOP: {
         u64 promoPieces = getWhiteBishops();
         promoPieces |= Utils::squareToBitboard(toSquare);
         setWhiteBishops(promoPieces);
         break;
       }
-
       case WHITE_KNIGHT: {
         u64 promoPieces = getWhiteKnights();
         promoPieces |= Utils::squareToBitboard(toSquare);
@@ -185,17 +216,23 @@ void Board::makeMove(const Move &move) {
       default:
         break;
       }
-    } else
+    } else {
+      zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_PAWN);
       currPieceLoc |= Utils::squareToBitboard(toSquare);
+    }
 
     setWhitePawns(currPieceLoc);
     break;
+
   case BLACK_PAWN:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_PAWN);
+
     currPieceLoc = getBlackPawns();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
 
     if (isPromotion) {
       PieceType promotedPiece = move.getPromotionPiece();
+      zobristHash ^= zobrist.getPieceKey(toSquare, promotedPiece);
 
       switch (promotedPiece) {
       case BLACK_QUEEN: {
@@ -204,21 +241,18 @@ void Board::makeMove(const Move &move) {
         setBlackQueens(promoPieces);
         break;
       }
-
       case BLACK_ROOK: {
         u64 promoPieces = getBlackRooks();
         promoPieces |= Utils::squareToBitboard(toSquare);
         setBlackRooks(promoPieces);
         break;
       }
-
       case BLACK_BISHOP: {
         u64 promoPieces = getBlackBishops();
         promoPieces |= Utils::squareToBitboard(toSquare);
         setBlackBishops(promoPieces);
         break;
       }
-
       case BLACK_KNIGHT: {
         u64 promoPieces = getBlackKnights();
         promoPieces |= Utils::squareToBitboard(toSquare);
@@ -228,64 +262,103 @@ void Board::makeMove(const Move &move) {
       default:
         break;
       }
-    } else
+    } else {
+      zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_PAWN);
       currPieceLoc |= Utils::squareToBitboard(toSquare);
+    }
 
     setBlackPawns(currPieceLoc);
     break;
+
   case WHITE_KNIGHT:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_KNIGHT);
+    zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_KNIGHT);
+
     currPieceLoc = getWhiteKnights();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteKnights(currPieceLoc);
     break;
+
   case BLACK_KNIGHT:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_KNIGHT);
+    zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_KNIGHT);
+
     currPieceLoc = getBlackKnights();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setBlackKnights(currPieceLoc);
     break;
+
   case WHITE_BISHOP:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_BISHOP);
+    zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_BISHOP);
+
     currPieceLoc = getWhiteBishops();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteBishops(currPieceLoc);
     break;
+
   case BLACK_BISHOP:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_BISHOP);
+    zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_BISHOP);
     currPieceLoc = getBlackBishops();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setBlackBishops(currPieceLoc);
     break;
+
   case WHITE_ROOK:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_ROOK);
+    zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_ROOK);
     currPieceLoc = getWhiteRooks();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteRooks(currPieceLoc);
     break;
+
   case BLACK_ROOK:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_ROOK);
+    zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_ROOK);
+
     currPieceLoc = getBlackRooks();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setBlackRooks(currPieceLoc);
     break;
+
   case WHITE_QUEEN:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_QUEEN);
+    zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_QUEEN);
+
     currPieceLoc = getWhiteQueens();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteQueens(currPieceLoc);
     break;
+
   case BLACK_QUEEN:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_QUEEN);
+    zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_QUEEN);
+
     currPieceLoc = getBlackQueens();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setBlackQueens(currPieceLoc);
     break;
+
   case WHITE_KING:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_KING);
+    zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_KING);
+
     currPieceLoc = getWhiteKing();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
 
     if (isKingSideCastling) {
+      zobristHash ^= zobrist.getPieceKey(H1, WHITE_ROOK);
+      zobristHash ^= zobrist.getPieceKey(F1, WHITE_ROOK);
+
       u64 rookloc = getWhiteRooks();
       rookloc &= ~(Utils::squareToBitboard(H1));
       rookloc |= Utils::squareToBitboard(F1);
@@ -293,6 +366,9 @@ void Board::makeMove(const Move &move) {
       hasWhiteCastled = true;
     }
     if (isQueenSideCastling) {
+      zobristHash ^= zobrist.getPieceKey(A1, WHITE_ROOK);
+      zobristHash ^= zobrist.getPieceKey(D1, WHITE_ROOK);
+
       u64 rookloc = getWhiteRooks();
       rookloc &= ~(Utils::squareToBitboard(A1));
       rookloc |= Utils::squareToBitboard(D1);
@@ -302,11 +378,18 @@ void Board::makeMove(const Move &move) {
     currPieceLoc |= Utils::squareToBitboard(toSquare);
     setWhiteKing(currPieceLoc);
     break;
+
   case BLACK_KING:
+    zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_KING);
+    zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_KING);
+
     currPieceLoc = getBlackKing();
     currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
 
     if (isKingSideCastling) {
+      zobristHash ^= zobrist.getPieceKey(H8, BLACK_ROOK);
+      zobristHash ^= zobrist.getPieceKey(F8, BLACK_ROOK);
+
       u64 rookloc = getBlackRooks();
       rookloc &= ~(Utils::squareToBitboard(H8));
       rookloc |= Utils::squareToBitboard(F8);
@@ -314,6 +397,9 @@ void Board::makeMove(const Move &move) {
       hasBlackCastled = true;
     }
     if (isQueenSideCastling) {
+      zobristHash ^= zobrist.getPieceKey(A8, BLACK_ROOK);
+      zobristHash ^= zobrist.getPieceKey(D8, BLACK_ROOK);
+
       u64 rookloc = getBlackRooks();
       rookloc &= ~(Utils::squareToBitboard(A8));
       rookloc |= Utils::squareToBitboard(D8);
@@ -326,6 +412,8 @@ void Board::makeMove(const Move &move) {
   }
 
   if (isCapture) {
+    zobristHash ^= zobrist.getPieceKey(toSquare, capturedPiece);
+
     switch (capturedPiece) {
     case EMPTY:
       break;
@@ -395,7 +483,6 @@ void Board::makeMove(const Move &move) {
     canBlackCastleQS = false;
   }
 
-  // Update castling rights if rooks move or are captured
   if (fromSquare == H1 || toSquare == H1)
     canWhiteCastleKS = false;
   if (fromSquare == A1 || toSquare == A1)
@@ -405,16 +492,22 @@ void Board::makeMove(const Move &move) {
   if (fromSquare == A8 || toSquare == A8)
     canBlackCastleQS = false;
 
-  // Update en passant target
+  int newCastlingRights =
+      (canWhiteCastleKS ? 1 : 0) | (canWhiteCastleQS ? 2 : 0) |
+      (canBlackCastleKS ? 4 : 0) | (canBlackCastleQS ? 8 : 0);
+
+  zobristHash ^= zobrist.getCastleKey(oldCastlingRights);
+  zobristHash ^= zobrist.getCastleKey(newCastlingRights);
+
   if ((piece == WHITE_PAWN || piece == BLACK_PAWN) &&
       abs(toSquare - fromSquare) == 16) {
-    // Double pawn move
     enPassantSquare = static_cast<Square>((fromSquare + toSquare) / 2);
+    zobristHash ^= zobrist.getEnPassantKey(enPassantSquare);
   } else {
     enPassantSquare = SQ_NONE;
   }
 
-  // Switch turns
+  zobristHash ^= zobrist.getBlackToMoveKey();
   whiteToMove = !whiteToMove;
 }
 
@@ -441,6 +534,7 @@ void Board::undoMove() {
   canBlackCastleQS = undo.canBlackCastleQS;
   hasWhiteCastled = undo.hasWhiteCastled;
   hasBlackCastled = undo.hasBlackCastled;
+  zobristHash = undo.zobristHash;
 
   moveHistory.pop_back();
 
@@ -574,6 +668,7 @@ void Board::undoMove() {
     currPieceLoc &= ~(Utils::squareToBitboard(toSquare));
     currPieceLoc |= Utils::squareToBitboard(fromSquare);
     setBlackKnights(currPieceLoc);
+
     break;
 
   case WHITE_BISHOP:
@@ -596,7 +691,6 @@ void Board::undoMove() {
     currPieceLoc |= Utils::squareToBitboard(fromSquare);
     setWhiteRooks(currPieceLoc);
     break;
-
   case BLACK_ROOK:
     currPieceLoc = getBlackRooks();
     currPieceLoc &= ~(Utils::squareToBitboard(toSquare));
@@ -617,7 +711,6 @@ void Board::undoMove() {
     currPieceLoc |= Utils::squareToBitboard(fromSquare);
     setBlackQueens(currPieceLoc);
     break;
-
   case WHITE_KING:
     currPieceLoc = getWhiteKing();
     currPieceLoc &= ~(Utils::squareToBitboard(toSquare));
@@ -1023,4 +1116,27 @@ u64 Board::getPinnedPieces(bool isWhite) {
   }
 
   return pinned;
+}
+
+void Board::initZobristHash() {
+  zobristHash = 0ULL;
+
+  for (int sq = 0; sq < 64; sq++) {
+    PieceType piece = Utils::getPieceTypeAt(*this, static_cast<Square>(sq));
+    if (piece != EMPTY) {
+      zobristHash ^= zobrist.getPieceKey(sq, piece);
+    }
+  }
+
+  int castling = (canWhiteCastleKS ? 1 : 0) | (canWhiteCastleQS ? 2 : 0) |
+                 (canBlackCastleKS ? 4 : 0) | (canBlackCastleQS ? 8 : 0);
+  zobristHash ^= zobrist.getCastleKey(castling);
+
+  if (enPassantSquare != SQ_NONE) {
+    zobristHash ^= zobrist.getEnPassantKey(enPassantSquare);
+  }
+
+  if (!whiteToMove) {
+    zobristHash ^= zobrist.getBlackToMoveKey();
+  }
 }

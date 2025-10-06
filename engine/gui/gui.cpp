@@ -5,6 +5,7 @@
 #include "../include/magic.hpp"
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
+#include "../include/zobrist.hpp"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <map>

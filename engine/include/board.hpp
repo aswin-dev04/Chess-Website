@@ -2,6 +2,8 @@
 #define BOARD_HPP
 
 #include "move.hpp"
+#include "types.hpp"
+#include "zobrist.hpp"
 #include <cstdint>
 #include <sys/types.h>
 #include <vector>
@@ -19,6 +21,7 @@ struct undoInfo {
   bool whiteToMove;
   bool hasWhiteCastled;
   bool hasBlackCastled;
+  u64 zobristHash;
 };
 class Board {
 private:
@@ -50,6 +53,9 @@ private:
 
   bool hasWhiteCastled = false;
   bool hasBlackCastled = false;
+
+  static Zobrist zobrist;
+  u64 zobristHash;
 
 public:
   Board();
@@ -168,6 +174,8 @@ public:
   inline bool getHasBlackCastled() const { return hasBlackCastled; }
 
   u64 getPinnedPieces(bool isWhite);
+  inline u64 getZobristHash() const { return zobristHash; }
+  void initZobristHash();
 };
 
 #endif
