@@ -9,7 +9,7 @@ ChessAI::ChessAI() {}
 int ChessAI::minimax(Board &board, int depth, long long int alpha,
                      long long int beta, bool maximizingPlayer) {
   if (depth == 0) {
-    return Evaluation::evaluate(board);
+    return quiescence(board, alpha, beta, maximizingPlayer, 0);
   }
 
   std::vector<Move> moves;
@@ -92,3 +92,101 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
 }
 
 Move ChessAI::getBestMove(Board &board) { return getBestMove(board, 4); }
+
+int ChessAI::quiescence(Board &board, int alpha, int beta,
+                        bool maximizingPlayer, int qDepth = 0) {
+
+  const int MAX_Q_DEPTH = 4;
+
+  int standPat = Evaluation::evaluate(board);
+
+  if (qDepth >= MAX_Q_DEPTH) {
+    return standPat;
+  }
+
+  if (maximizingPlayer) {
+    if (standPat >= beta) {
+      return beta;
+    }
+    if (standPat > alpha) {
+      alpha = standPat;
+    }
+  } else {
+    if (standPat <= alpha) {
+      return alpha;
+    }
+    if (standPat < beta) {
+      beta = standPat;
+    }
+  }
+
+  std::vector<Move> tacticalMoves = generateTacticalMoves(board);
+
+  if (tacticalMoves.empty()) {
+    return standPat;
+  }
+  std::vector<Move> orderedTacticalMoves =
+      MoveOrder::getOrderedMoves(board, tacticalMoves);
+
+  const int DELTA = 900;
+  if (maximizingPlayer && standPat + DELTA < alpha) {
+    return standPat;
+  }
+  if (!maximizingPlayer && standPat - DELTA > beta) {
+    return standPat;
+  }
+
+  if (maximizingPlayer) {
+    int maxEval = standPat;
+
+    for (Move &move : tacticalMoves) {
+      board.makeMove(move);
+      int eval = quiescence(board, alpha, beta, false, qDepth + 1);
+      board.undoMove();
+
+      maxEval = std::max(maxEval, eval);
+      alpha = std::max(alpha, eval);
+
+      if (beta <= alpha) {
+        break;
+      }
+    }
+
+    return maxEval;
+  } else {
+    int minEval = standPat;
+
+    for (Move &move : tacticalMoves) {
+      board.makeMove(move);
+      int eval = quiescence(board, alpha, beta, true, qDepth + 1);
+      board.undoMove();
+
+      minEval = std::min(minEval, eval);
+      beta = std::min(beta, eval);
+
+      if (beta <= alpha) {
+        break;
+      }
+    }
+
+    return minEval;
+  }
+}
+
+std::vector<Move> ChessAI::generateTacticalMoves(Board &board) {
+  bool isWhite = board.getWhiteToMove();
+
+  std::vector<Move> tactical = MoveGeneration::generateCaptures(board, isWhite);
+
+  u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+  u64 promoPawns =
+      isWhite ? pawns & Tables::maskRank[6] : pawns & Tables::maskRank[1];
+
+  if (promoPawns != 0) {
+    std::vector<Move> promos =
+        MoveGeneration::generatePawnPromotionMoves(board, promoPawns, isWhite);
+    tactical.insert(tactical.end(), promos.begin(), promos.end());
+  }
+
+  return tactical;
+}

@@ -23,6 +23,9 @@ public:
                : minimax(board, 1, INT_MIN, INT_MAX, maximizingPlayer) ==
                      INT_MAX;
   }
+  int quiescence(Board &board, int alpha, int beta, bool maximizingPlayer,
+                 int qDepth);
+  std::vector<Move> generateTacticalMoves(Board &board);
 };
 
 #endif

@@ -67,5 +67,6 @@ public:
                                                       bool isWhite);
   static std::vector<Move> generateCastlingMoves(Board &board, bool isWhite);
   static std::vector<Move> generateEnPassantMoves(Board &board, bool isWhite);
+  static std::vector<Move> generateCaptures(Board &board, bool isWhite);
 };
 #endif

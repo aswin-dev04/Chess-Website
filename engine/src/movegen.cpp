@@ -782,3 +782,114 @@ std::vector<Move> MoveGeneration::generateCastlingMoves(Board &board,
   }
   return castlingMoves;
 }
+
+std::vector<Move> MoveGeneration::generateCaptures(Board &board, bool isWhite) {
+  std::vector<Move> captures;
+
+  u64 ownPieces =
+      isWhite ? board.getAllWhitePieces() : board.getAllBlackPieces();
+  u64 enemyPieces =
+      isWhite ? board.getAllBlackPieces() : board.getAllWhitePieces();
+
+  u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
+  u64 nonPromoPawns =
+      isWhite ? pawns & ~Tables::maskRank[6] : pawns & ~Tables::maskRank[1];
+  PieceType pawnPiece = isWhite ? WHITE_PAWN : BLACK_PAWN;
+
+  while (nonPromoPawns) {
+    Square fromSq = Utils::popLSB(nonPromoPawns);
+    u64 pawn = Utils::squareToBitboard(fromSq);
+    u64 attacks = isWhite ? validMoveBB::whitePawnAttacks(pawn)
+                          : validMoveBB::blackPawnAttacks(pawn);
+
+    u64 pawnCaptures = attacks & enemyPieces;
+    while (pawnCaptures) {
+      Square toSq = Utils::popLSB(pawnCaptures);
+      PieceType captured = Utils::getPieceTypeAt(board, toSq);
+      captures.emplace_back(fromSq, toSq, pawnPiece, captured, false, false,
+                            false, false, EMPTY);
+    }
+  }
+
+  std::vector<Move> epMoves = generateEnPassantMoves(board, isWhite);
+  captures.insert(captures.end(), epMoves.begin(), epMoves.end());
+
+  u64 knights = isWhite ? board.getWhiteKnights() : board.getBlackKnights();
+  PieceType knightPiece = isWhite ? WHITE_KNIGHT : BLACK_KNIGHT;
+  while (knights) {
+    Square fromSq = Utils::popLSB(knights);
+    u64 knight = Utils::squareToBitboard(fromSq);
+    u64 attacks = validMoveBB::knightMoves(knight, ownPieces);
+    u64 knightCaptures = attacks & enemyPieces;
+
+    while (knightCaptures) {
+      Square toSq = Utils::popLSB(knightCaptures);
+      PieceType captured = Utils::getPieceTypeAt(board, toSq);
+      captures.emplace_back(fromSq, toSq, knightPiece, captured, false, false,
+                            false, false, EMPTY);
+    }
+  }
+
+  u64 bishops = isWhite ? board.getWhiteBishops() : board.getBlackBishops();
+  PieceType bishopPiece = isWhite ? WHITE_BISHOP : BLACK_BISHOP;
+  while (bishops) {
+    Square fromSq = Utils::popLSB(bishops);
+    u64 bishop = Utils::squareToBitboard(fromSq);
+    u64 attacks = validMoveBB::bishopMoves(bishop, ownPieces, enemyPieces);
+    u64 bishopCaptures = attacks & enemyPieces;
+
+    while (bishopCaptures) {
+      Square toSq = Utils::popLSB(bishopCaptures);
+      PieceType captured = Utils::getPieceTypeAt(board, toSq);
+      captures.emplace_back(fromSq, toSq, bishopPiece, captured, false, false,
+                            false, false, EMPTY);
+    }
+  }
+
+  u64 rooks = isWhite ? board.getWhiteRooks() : board.getBlackRooks();
+  PieceType rookPiece = isWhite ? WHITE_ROOK : BLACK_ROOK;
+  while (rooks) {
+    Square fromSq = Utils::popLSB(rooks);
+    u64 rook = Utils::squareToBitboard(fromSq);
+    u64 attacks = validMoveBB::rookMoves(rook, ownPieces, enemyPieces);
+    u64 rookCaptures = attacks & enemyPieces;
+
+    while (rookCaptures) {
+      Square toSq = Utils::popLSB(rookCaptures);
+      PieceType captured = Utils::getPieceTypeAt(board, toSq);
+      captures.emplace_back(fromSq, toSq, rookPiece, captured, false, false,
+                            false, false, EMPTY);
+    }
+  }
+
+  u64 queens = isWhite ? board.getWhiteQueens() : board.getBlackQueens();
+  PieceType queenPiece = isWhite ? WHITE_QUEEN : BLACK_QUEEN;
+  while (queens) {
+    Square fromSq = Utils::popLSB(queens);
+    u64 queen = Utils::squareToBitboard(fromSq);
+    u64 attacks = validMoveBB::queenMoves(queen, ownPieces, enemyPieces);
+    u64 queenCaptures = attacks & enemyPieces;
+
+    while (queenCaptures) {
+      Square toSq = Utils::popLSB(queenCaptures);
+      PieceType captured = Utils::getPieceTypeAt(board, toSq);
+      captures.emplace_back(fromSq, toSq, queenPiece, captured, false, false,
+                            false, false, EMPTY);
+    }
+  }
+
+  u64 king = isWhite ? board.getWhiteKing() : board.getBlackKing();
+  PieceType kingPiece = isWhite ? WHITE_KING : BLACK_KING;
+  Square kingSq = Utils::bitboardToSquare(king);
+  u64 attacks = validMoveBB::kingMoves(king, ownPieces);
+  u64 kingCaptures = attacks & enemyPieces;
+
+  while (kingCaptures) {
+    Square toSq = Utils::popLSB(kingCaptures);
+    PieceType captured = Utils::getPieceTypeAt(board, toSq);
+    captures.emplace_back(kingSq, toSq, kingPiece, captured, false, false,
+                          false, false, EMPTY);
+  }
+
+  return captures;
+}
