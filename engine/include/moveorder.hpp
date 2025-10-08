@@ -10,6 +10,8 @@ public:
   static std::vector<Move> getOrderedMoves(Board &board,
                                            std::vector<Move> &moves);
   static int getMoveScore(Board &board, Move move);
+  static int getCaptureScore(const Move &move);
+  static void orderCaptures(std::vector<Move> &captures);
 };
 
 #endif

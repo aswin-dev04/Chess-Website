@@ -29,30 +29,12 @@ std::vector<Move> MoveOrder::getOrderedMoves(Board &board) {
   return orderedMoves;
 }
 
-std::vector<Move> MoveOrder::getOrderedMoves(Board &board,
-                                             std::vector<Move> &moves) {
-  std::vector<std::pair<Move, int>> scoredMoves;
-  scoredMoves.reserve(moves.size());
-
-  for (const Move &move : moves) {
-    int score = getMoveScore(board, move);
-    scoredMoves.push_back({move, score});
-  }
-
-  std::sort(scoredMoves.begin(), scoredMoves.end(),
-            [](const std::pair<Move, int> &a, const std::pair<Move, int> &b) {
-              return a.second > b.second;
+void MoveOrder::orderCaptures(std::vector<Move> &captures) {
+  std::sort(captures.begin(), captures.end(),
+            [&](const Move &a, const Move &b) {
+              return getCaptureScore(a) > getCaptureScore(b);
             });
-
-  std::vector<Move> orderedMoves;
-  orderedMoves.reserve(scoredMoves.size());
-  for (auto &entry : scoredMoves) {
-    orderedMoves.push_back(entry.first);
-  }
-
-  return orderedMoves;
 }
-
 int MoveOrder::getMoveScore(Board &board, Move move) {
   int score = 0;
 
@@ -84,4 +66,10 @@ int MoveOrder::getMoveScore(Board &board, Move move) {
     score -= 1000;
 
   return score;
+}
+
+int MoveOrder::getCaptureScore(const Move &move) {
+  int victimValue = Evaluation::materialValue[move.getCapturedPiece() - 1];
+  int attackerValue = Evaluation::materialValue[move.getPieceType() - 1];
+  return victimValue * 10 - attackerValue;
 }

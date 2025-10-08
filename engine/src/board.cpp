@@ -122,354 +122,269 @@ void Board::makeMove(const Move &move) {
     zobristHash ^= zobrist.getEnPassantKey(enPassantSquare);
   }
 
-  u64 currPieceLoc = 0ULL;
-  u64 capturedPieceLoc = 0ULL;
+  if (isCapture && !isEnPassant) {
+    zobristHash ^= zobrist.getPieceKey(toSquare, capturedPiece);
+    u64 capturedPieceLoc;
+    switch (capturedPiece) {
+    case WHITE_PAWN: {
+      capturedPieceLoc = getWhitePawns();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setWhitePawns(capturedPieceLoc);
+      break;
+    }
+    case BLACK_PAWN: {
+      capturedPieceLoc = getBlackPawns();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setBlackPawns(capturedPieceLoc);
+      break;
+    }
+    case WHITE_KNIGHT: {
+      capturedPieceLoc = getWhiteKnights();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setWhiteKnights(capturedPieceLoc);
+      break;
+    }
+    case BLACK_KNIGHT: {
+      capturedPieceLoc = getBlackKnights();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setBlackKnights(capturedPieceLoc);
+      break;
+    }
+    case WHITE_BISHOP: {
+      capturedPieceLoc = getWhiteBishops();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setWhiteBishops(capturedPieceLoc);
+      break;
+    }
+    case BLACK_BISHOP: {
+      capturedPieceLoc = getBlackBishops();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setBlackBishops(capturedPieceLoc);
+      break;
+    }
+    case WHITE_ROOK: {
+      capturedPieceLoc = getWhiteRooks();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setWhiteRooks(capturedPieceLoc);
+      break;
+    }
+    case BLACK_ROOK: {
+      capturedPieceLoc = getBlackRooks();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setBlackRooks(capturedPieceLoc);
+      break;
+    }
+    case WHITE_QUEEN: {
+      capturedPieceLoc = getWhiteQueens();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setWhiteQueens(capturedPieceLoc);
+      break;
+    }
+    case BLACK_QUEEN: {
+      capturedPieceLoc = getBlackQueens();
+      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
+      setBlackQueens(capturedPieceLoc);
+      break;
+    }
+    default:
+      break;
+    }
+  }
 
   if (isEnPassant) {
     if (piece == WHITE_PAWN) {
       Square capturedPawnSquare = static_cast<Square>(toSquare - 8);
-
       zobristHash ^= zobrist.getPieceKey(capturedPawnSquare, BLACK_PAWN);
-
       u64 enemyPawns = getBlackPawns();
       enemyPawns &= ~(Utils::squareToBitboard(capturedPawnSquare));
       setBlackPawns(enemyPawns);
-
       zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_PAWN);
       zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_PAWN);
-
       u64 ownPawns = getWhitePawns();
       ownPawns &= ~(Utils::squareToBitboard(fromSquare));
       ownPawns |= Utils::squareToBitboard(toSquare);
       setWhitePawns(ownPawns);
-
-      moveHistory.push_back(move);
-      setALLPiecesAggregate();
-
-      zobristHash ^= zobrist.getBlackToMoveKey();
-
-      whiteToMove = !whiteToMove;
-      return;
-    } else {
+    } else { // Black Pawn
       Square capturedPawnSquare = static_cast<Square>(toSquare + 8);
       zobristHash ^= zobrist.getPieceKey(capturedPawnSquare, WHITE_PAWN);
       u64 enemyPawns = getWhitePawns();
       enemyPawns &= ~(Utils::squareToBitboard(capturedPawnSquare));
       setWhitePawns(enemyPawns);
-
       zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_PAWN);
       zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_PAWN);
-
       u64 ownPawns = getBlackPawns();
       ownPawns &= ~(Utils::squareToBitboard(fromSquare));
       ownPawns |= Utils::squareToBitboard(toSquare);
       setBlackPawns(ownPawns);
-
-      moveHistory.push_back(move);
-      setALLPiecesAggregate();
-
-      zobristHash ^= zobrist.getBlackToMoveKey();
-
-      whiteToMove = !whiteToMove;
-      return;
     }
+    moveHistory.push_back(move);
+    setALLPiecesAggregate();
+    zobristHash ^= zobrist.getBlackToMoveKey();
+    whiteToMove = !whiteToMove;
+    return;
   }
 
   switch (piece) {
-  case EMPTY:
-    break;
-  case WHITE_PAWN:
+  case WHITE_PAWN: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_PAWN);
-
-    currPieceLoc = getWhitePawns();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-
+    u64 whitePawnsLoc = getWhitePawns();
+    whitePawnsLoc &= ~(Utils::squareToBitboard(fromSquare));
     if (isPromotion) {
       PieceType promotedPiece = move.getPromotionPiece();
       zobristHash ^= zobrist.getPieceKey(toSquare, promotedPiece);
-
       switch (promotedPiece) {
-      case WHITE_QUEEN: {
-        u64 promoPieces = getWhiteQueens();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setWhiteQueens(promoPieces);
+      case WHITE_QUEEN:
+        setWhiteQueens(getWhiteQueens() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case WHITE_ROOK: {
-        u64 promoPieces = getWhiteRooks();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setWhiteRooks(promoPieces);
+      case WHITE_ROOK:
+        setWhiteRooks(getWhiteRooks() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case WHITE_BISHOP: {
-        u64 promoPieces = getWhiteBishops();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setWhiteBishops(promoPieces);
+      case WHITE_BISHOP:
+        setWhiteBishops(getWhiteBishops() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case WHITE_KNIGHT: {
-        u64 promoPieces = getWhiteKnights();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setWhiteKnights(promoPieces);
+      case WHITE_KNIGHT:
+        setWhiteKnights(getWhiteKnights() | Utils::squareToBitboard(toSquare));
         break;
-      }
       default:
         break;
       }
     } else {
       zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_PAWN);
-      currPieceLoc |= Utils::squareToBitboard(toSquare);
+      whitePawnsLoc |= Utils::squareToBitboard(toSquare);
     }
-
-    setWhitePawns(currPieceLoc);
+    setWhitePawns(whitePawnsLoc);
     break;
-
-  case BLACK_PAWN:
+  }
+  case BLACK_PAWN: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_PAWN);
-
-    currPieceLoc = getBlackPawns();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-
+    u64 blackPawnsLoc = getBlackPawns();
+    blackPawnsLoc &= ~(Utils::squareToBitboard(fromSquare));
     if (isPromotion) {
       PieceType promotedPiece = move.getPromotionPiece();
       zobristHash ^= zobrist.getPieceKey(toSquare, promotedPiece);
-
       switch (promotedPiece) {
-      case BLACK_QUEEN: {
-        u64 promoPieces = getBlackQueens();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setBlackQueens(promoPieces);
+      case BLACK_QUEEN:
+        setBlackQueens(getBlackQueens() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case BLACK_ROOK: {
-        u64 promoPieces = getBlackRooks();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setBlackRooks(promoPieces);
+      case BLACK_ROOK:
+        setBlackRooks(getBlackRooks() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case BLACK_BISHOP: {
-        u64 promoPieces = getBlackBishops();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setBlackBishops(promoPieces);
+      case BLACK_BISHOP:
+        setBlackBishops(getBlackBishops() | Utils::squareToBitboard(toSquare));
         break;
-      }
-      case BLACK_KNIGHT: {
-        u64 promoPieces = getBlackKnights();
-        promoPieces |= Utils::squareToBitboard(toSquare);
-        setBlackKnights(promoPieces);
+      case BLACK_KNIGHT:
+        setBlackKnights(getBlackKnights() | Utils::squareToBitboard(toSquare));
         break;
-      }
       default:
         break;
       }
     } else {
       zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_PAWN);
-      currPieceLoc |= Utils::squareToBitboard(toSquare);
+      blackPawnsLoc |= Utils::squareToBitboard(toSquare);
     }
-
-    setBlackPawns(currPieceLoc);
+    setBlackPawns(blackPawnsLoc);
     break;
-
-  case WHITE_KNIGHT:
+  }
+  case WHITE_KNIGHT: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_KNIGHT);
     zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_KNIGHT);
-
-    currPieceLoc = getWhiteKnights();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setWhiteKnights(currPieceLoc);
+    setWhiteKnights((getWhiteKnights() ^ Utils::squareToBitboard(fromSquare)) |
+                    Utils::squareToBitboard(toSquare));
     break;
-
-  case BLACK_KNIGHT:
+  }
+  case BLACK_KNIGHT: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_KNIGHT);
     zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_KNIGHT);
-
-    currPieceLoc = getBlackKnights();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setBlackKnights(currPieceLoc);
+    setBlackKnights((getBlackKnights() ^ Utils::squareToBitboard(fromSquare)) |
+                    Utils::squareToBitboard(toSquare));
     break;
-
-  case WHITE_BISHOP:
+  }
+  case WHITE_BISHOP: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_BISHOP);
     zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_BISHOP);
-
-    currPieceLoc = getWhiteBishops();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setWhiteBishops(currPieceLoc);
+    setWhiteBishops((getWhiteBishops() ^ Utils::squareToBitboard(fromSquare)) |
+                    Utils::squareToBitboard(toSquare));
     break;
-
-  case BLACK_BISHOP:
+  }
+  case BLACK_BISHOP: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_BISHOP);
     zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_BISHOP);
-    currPieceLoc = getBlackBishops();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setBlackBishops(currPieceLoc);
+    setBlackBishops((getBlackBishops() ^ Utils::squareToBitboard(fromSquare)) |
+                    Utils::squareToBitboard(toSquare));
     break;
-
-  case WHITE_ROOK:
+  }
+  case WHITE_ROOK: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_ROOK);
     zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_ROOK);
-    currPieceLoc = getWhiteRooks();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setWhiteRooks(currPieceLoc);
+    setWhiteRooks((getWhiteRooks() ^ Utils::squareToBitboard(fromSquare)) |
+                  Utils::squareToBitboard(toSquare));
     break;
-
-  case BLACK_ROOK:
+  }
+  case BLACK_ROOK: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_ROOK);
     zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_ROOK);
-
-    currPieceLoc = getBlackRooks();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setBlackRooks(currPieceLoc);
+    setBlackRooks((getBlackRooks() ^ Utils::squareToBitboard(fromSquare)) |
+                  Utils::squareToBitboard(toSquare));
     break;
-
-  case WHITE_QUEEN:
+  }
+  case WHITE_QUEEN: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_QUEEN);
     zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_QUEEN);
-
-    currPieceLoc = getWhiteQueens();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setWhiteQueens(currPieceLoc);
+    setWhiteQueens((getWhiteQueens() ^ Utils::squareToBitboard(fromSquare)) |
+                   Utils::squareToBitboard(toSquare));
     break;
-
-  case BLACK_QUEEN:
+  }
+  case BLACK_QUEEN: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_QUEEN);
     zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_QUEEN);
-
-    currPieceLoc = getBlackQueens();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setBlackQueens(currPieceLoc);
+    setBlackQueens((getBlackQueens() ^ Utils::squareToBitboard(fromSquare)) |
+                   Utils::squareToBitboard(toSquare));
     break;
-
-  case WHITE_KING:
+  }
+  case WHITE_KING: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_KING);
     zobristHash ^= zobrist.getPieceKey(toSquare, WHITE_KING);
-
-    currPieceLoc = getWhiteKing();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-
     if (isKingSideCastling) {
       zobristHash ^= zobrist.getPieceKey(H1, WHITE_ROOK);
       zobristHash ^= zobrist.getPieceKey(F1, WHITE_ROOK);
-
-      u64 rookloc = getWhiteRooks();
-      rookloc &= ~(Utils::squareToBitboard(H1));
-      rookloc |= Utils::squareToBitboard(F1);
-      setWhiteRooks(rookloc);
+      setWhiteRooks((getWhiteRooks() ^ Utils::squareToBitboard(H1)) |
+                    Utils::squareToBitboard(F1));
       hasWhiteCastled = true;
     }
     if (isQueenSideCastling) {
       zobristHash ^= zobrist.getPieceKey(A1, WHITE_ROOK);
       zobristHash ^= zobrist.getPieceKey(D1, WHITE_ROOK);
-
-      u64 rookloc = getWhiteRooks();
-      rookloc &= ~(Utils::squareToBitboard(A1));
-      rookloc |= Utils::squareToBitboard(D1);
-      setWhiteRooks(rookloc);
+      setWhiteRooks((getWhiteRooks() ^ Utils::squareToBitboard(A1)) |
+                    Utils::squareToBitboard(D1));
       hasWhiteCastled = true;
     }
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setWhiteKing(currPieceLoc);
+    setWhiteKing((getWhiteKing() ^ Utils::squareToBitboard(fromSquare)) |
+                 Utils::squareToBitboard(toSquare));
     break;
-
-  case BLACK_KING:
+  }
+  case BLACK_KING: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, BLACK_KING);
     zobristHash ^= zobrist.getPieceKey(toSquare, BLACK_KING);
-
-    currPieceLoc = getBlackKing();
-    currPieceLoc &= ~(Utils::squareToBitboard(fromSquare));
-
     if (isKingSideCastling) {
       zobristHash ^= zobrist.getPieceKey(H8, BLACK_ROOK);
       zobristHash ^= zobrist.getPieceKey(F8, BLACK_ROOK);
-
-      u64 rookloc = getBlackRooks();
-      rookloc &= ~(Utils::squareToBitboard(H8));
-      rookloc |= Utils::squareToBitboard(F8);
-      setBlackRooks(rookloc);
+      setBlackRooks((getBlackRooks() ^ Utils::squareToBitboard(H8)) |
+                    Utils::squareToBitboard(F8));
       hasBlackCastled = true;
     }
     if (isQueenSideCastling) {
       zobristHash ^= zobrist.getPieceKey(A8, BLACK_ROOK);
       zobristHash ^= zobrist.getPieceKey(D8, BLACK_ROOK);
-
-      u64 rookloc = getBlackRooks();
-      rookloc &= ~(Utils::squareToBitboard(A8));
-      rookloc |= Utils::squareToBitboard(D8);
-      setBlackRooks(rookloc);
+      setBlackRooks((getBlackRooks() ^ Utils::squareToBitboard(A8)) |
+                    Utils::squareToBitboard(D8));
       hasBlackCastled = true;
     }
-    currPieceLoc |= Utils::squareToBitboard(toSquare);
-    setBlackKing(currPieceLoc);
+    setBlackKing((getBlackKing() ^ Utils::squareToBitboard(fromSquare)) |
+                 Utils::squareToBitboard(toSquare));
     break;
   }
-
-  if (isCapture) {
-    zobristHash ^= zobrist.getPieceKey(toSquare, capturedPiece);
-
-    switch (capturedPiece) {
-    case EMPTY:
-      break;
-    case WHITE_PAWN:
-      capturedPieceLoc = getWhitePawns();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setWhitePawns(capturedPieceLoc);
-      break;
-    case BLACK_PAWN:
-      capturedPieceLoc = getBlackPawns();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setBlackPawns(capturedPieceLoc);
-      break;
-    case WHITE_KNIGHT:
-      capturedPieceLoc = getWhiteKnights();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setWhiteKnights(capturedPieceLoc);
-      break;
-    case BLACK_KNIGHT:
-      capturedPieceLoc = getBlackKnights();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setBlackKnights(capturedPieceLoc);
-      break;
-    case WHITE_BISHOP:
-      capturedPieceLoc = getWhiteBishops();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setWhiteBishops(capturedPieceLoc);
-      break;
-    case BLACK_BISHOP:
-      capturedPieceLoc = getBlackBishops();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setBlackBishops(capturedPieceLoc);
-      break;
-    case WHITE_ROOK:
-      capturedPieceLoc = getWhiteRooks();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setWhiteRooks(capturedPieceLoc);
-      break;
-    case BLACK_ROOK:
-      capturedPieceLoc = getBlackRooks();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setBlackRooks(capturedPieceLoc);
-      break;
-    case WHITE_QUEEN:
-      capturedPieceLoc = getWhiteQueens();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setWhiteQueens(capturedPieceLoc);
-      break;
-    case BLACK_QUEEN:
-      capturedPieceLoc = getBlackQueens();
-      capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
-      setBlackQueens(capturedPieceLoc);
-      break;
-    default:
-      break;
-    }
+  default:
+    break;
   }
 
   moveHistory.push_back(move);
@@ -482,7 +397,6 @@ void Board::makeMove(const Move &move) {
     canBlackCastleKS = false;
     canBlackCastleQS = false;
   }
-
   if (fromSquare == H1 || toSquare == H1)
     canWhiteCastleKS = false;
   if (fromSquare == A1 || toSquare == A1)

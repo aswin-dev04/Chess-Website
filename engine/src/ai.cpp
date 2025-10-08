@@ -211,7 +211,7 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
   if (tacticalMoves.empty()) {
     return standPat;
   }
-  tacticalMoves = MoveOrder::getOrderedMoves(board, tacticalMoves);
+  MoveOrder::orderCaptures(tacticalMoves);
 
   const int DELTA = 900;
   if (maximizingPlayer && standPat + DELTA < alpha) {
@@ -271,6 +271,16 @@ std::vector<Move> ChessAI::generateTacticalMoves(Board &board) {
     std::vector<Move> promos =
         MoveGeneration::generatePawnPromotionMoves(board, promoPawns, isWhite);
     tactical.insert(tactical.end(), promos.begin(), promos.end());
+  }
+
+  std::vector<Move> legalTacticalMoves;
+
+  for (Move &move : tactical) {
+    board.makeMove(move);
+    if (!board.isKingChecked(isWhite)) {
+      legalTacticalMoves.push_back(move);
+    }
+    board.undoMove();
   }
 
   return tactical;
