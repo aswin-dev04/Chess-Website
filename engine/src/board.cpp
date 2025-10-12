@@ -1,3 +1,10 @@
+/**
+ * @file board.cpp
+ * @brief Implements the Board class, which represents the chessboard.
+ * This file contains the implementation of the board representation, including
+ * methods for making and undoing moves, checking for check, and loading
+ * positions from FEN.
+ */
 #include "../include/board.hpp"
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
@@ -7,6 +14,7 @@
 
 Zobrist Board::zobrist;
 
+// Initializes the board to the standard starting position
 Board::Board() {
   setWhitePawns();
   setBlackPawns();
@@ -26,6 +34,7 @@ Board::Board() {
   initZobristHash();
 }
 
+// Initializes the board from a set of bitboards
 Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
              u64 bBishops, u64 wRooks, u64 bRooks, u64 wQueens, u64 bQueens,
              u64 wKing, u64 bKing) {
@@ -47,6 +56,7 @@ Board::Board(u64 wPawns, u64 bPawns, u64 wKnights, u64 bKnights, u64 wBishops,
   initZobristHash();
 }
 
+// Initializes the board from a FEN string
 Board::Board(const std::string &fen) {
   loadFromFen(fen);
   stateHistory = {};
@@ -81,15 +91,17 @@ Board &Board::operator=(const Board &other) {
   return *this;
 }
 
+// Checks if the king of the specified color is under attack
 bool Board::isKingChecked(bool isWhite) {
-
   u64 enemyAttacks = validMoveBB::allEnemyAttacks(*this, !isWhite);
   u64 king = isWhite ? getWhiteKing() : getBlackKing();
   return (enemyAttacks & king) != 0;
 }
 
+// Applies a move to the board, updating the board state and Zobrist hash
 void Board::makeMove(const Move &move) {
 
+  // Store current state for undoing the move
   undoInfo undo;
   undo.move = move;
   undo.capturedPiece = move.getCapturedPiece();
@@ -118,79 +130,72 @@ void Board::makeMove(const Move &move) {
       (canWhiteCastleKS ? 1 : 0) | (canWhiteCastleQS ? 2 : 0) |
       (canBlackCastleKS ? 4 : 0) | (canBlackCastleQS ? 8 : 0);
 
+  // Update Zobrist hash for en passant square
   if (enPassantSquare != SQ_NONE) {
     zobristHash ^= zobrist.getEnPassantKey(enPassantSquare);
   }
 
+  // Handle captures
   if (isCapture && !isEnPassant) {
     zobristHash ^= zobrist.getPieceKey(toSquare, capturedPiece);
     u64 capturedPieceLoc;
     switch (capturedPiece) {
-    case WHITE_PAWN: {
+    case WHITE_PAWN:
       capturedPieceLoc = getWhitePawns();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setWhitePawns(capturedPieceLoc);
       break;
-    }
-    case BLACK_PAWN: {
+    case BLACK_PAWN:
       capturedPieceLoc = getBlackPawns();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setBlackPawns(capturedPieceLoc);
       break;
-    }
-    case WHITE_KNIGHT: {
+    case WHITE_KNIGHT:
       capturedPieceLoc = getWhiteKnights();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setWhiteKnights(capturedPieceLoc);
       break;
-    }
-    case BLACK_KNIGHT: {
+    case BLACK_KNIGHT:
       capturedPieceLoc = getBlackKnights();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setBlackKnights(capturedPieceLoc);
       break;
-    }
-    case WHITE_BISHOP: {
+    case WHITE_BISHOP:
       capturedPieceLoc = getWhiteBishops();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setWhiteBishops(capturedPieceLoc);
       break;
-    }
-    case BLACK_BISHOP: {
+    case BLACK_BISHOP:
       capturedPieceLoc = getBlackBishops();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setBlackBishops(capturedPieceLoc);
       break;
-    }
-    case WHITE_ROOK: {
+    case WHITE_ROOK:
       capturedPieceLoc = getWhiteRooks();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setWhiteRooks(capturedPieceLoc);
       break;
-    }
-    case BLACK_ROOK: {
+    case BLACK_ROOK:
       capturedPieceLoc = getBlackRooks();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setBlackRooks(capturedPieceLoc);
       break;
-    }
-    case WHITE_QUEEN: {
+    case WHITE_QUEEN:
       capturedPieceLoc = getWhiteQueens();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setWhiteQueens(capturedPieceLoc);
       break;
-    }
-    case BLACK_QUEEN: {
+    case BLACK_QUEEN:
       capturedPieceLoc = getBlackQueens();
       capturedPieceLoc &= ~(Utils::squareToBitboard(toSquare));
       setBlackQueens(capturedPieceLoc);
       break;
-    }
     default:
       break;
     }
   }
 
+  // Handle en passant
   if (isEnPassant) {
     if (piece == WHITE_PAWN) {
       Square capturedPawnSquare = static_cast<Square>(toSquare - 8);
@@ -224,6 +229,7 @@ void Board::makeMove(const Move &move) {
     return;
   }
 
+  // Move the piece
   switch (piece) {
   case WHITE_PAWN: {
     zobristHash ^= zobrist.getPieceKey(fromSquare, WHITE_PAWN);
@@ -390,6 +396,7 @@ void Board::makeMove(const Move &move) {
   moveHistory.push_back(move);
   setALLPiecesAggregate();
 
+  // Update castling rights
   if (piece == WHITE_KING) {
     canWhiteCastleKS = false;
     canWhiteCastleQS = false;
@@ -406,13 +413,14 @@ void Board::makeMove(const Move &move) {
   if (fromSquare == A8 || toSquare == A8)
     canBlackCastleQS = false;
 
+  // Update Zobrist hash for castling rights
   int newCastlingRights =
       (canWhiteCastleKS ? 1 : 0) | (canWhiteCastleQS ? 2 : 0) |
       (canBlackCastleKS ? 4 : 0) | (canBlackCastleQS ? 8 : 0);
-
   zobristHash ^= zobrist.getCastleKey(oldCastlingRights);
   zobristHash ^= zobrist.getCastleKey(newCastlingRights);
 
+  // Update en passant square and Zobrist hash
   if ((piece == WHITE_PAWN || piece == BLACK_PAWN) &&
       abs(toSquare - fromSquare) == 16) {
     enPassantSquare = static_cast<Square>((fromSquare + toSquare) / 2);
@@ -421,10 +429,12 @@ void Board::makeMove(const Move &move) {
     enPassantSquare = SQ_NONE;
   }
 
+  // Switch side to move and update Zobrist hash
   zobristHash ^= zobrist.getBlackToMoveKey();
   whiteToMove = !whiteToMove;
 }
 
+// Reverts the last move made on the board
 void Board::undoMove() {
   undoInfo undo = stateHistory.back();
   stateHistory.pop_back();
@@ -440,6 +450,7 @@ void Board::undoMove() {
   bool isKingSideCastling = move.getIsKingSideCastle();
   bool isQueenSideCastling = move.getIsQueenSideCastle();
 
+  // Restore board state from undoInfo
   whiteToMove = undo.whiteToMove;
   enPassantSquare = undo.enPassantSquare;
   canWhiteCastleKS = undo.canWhiteCastleKS;
@@ -455,6 +466,7 @@ void Board::undoMove() {
   u64 currPieceLoc = 0ULL;
   u64 capturedPieceLoc = 0ULL;
 
+  // Handle en passant undo
   if (isEnPassant) {
     if (piece == WHITE_PAWN) {
       u64 ownPawns = getWhitePawns();
@@ -485,6 +497,7 @@ void Board::undoMove() {
     }
   }
 
+  // Move the piece back
   switch (piece) {
   case EMPTY:
     break;
@@ -667,6 +680,7 @@ void Board::undoMove() {
     break;
   }
 
+  // Restore the captured piece
   if (isCapture && capturedPiece != EMPTY) {
     switch (capturedPiece) {
     case WHITE_PAWN:
@@ -883,21 +897,18 @@ void Board::loadFromFen(const std::string &fen) {
   std::istringstream ss(fen);
   std::string token;
 
-  // 1. Parse piece placement (first part of FEN)
+  // 1. Parse piece placement
   std::getline(ss, token, ' ');
   int rank = 7; // Start from rank 8 (index 7)
   int file = 0; // Start from file a (index 0)
 
   for (char c : token) {
     if (c == '/') {
-      // Move to next rank
       rank--;
       file = 0;
     } else if (std::isdigit(c)) {
-      // Skip empty squares
       file += (c - '0');
     } else {
-      // Place piece
       Square sq = static_cast<Square>(rank * 8 + file);
       PieceType piece = Utils::charToPiece(c);
       u64 bitboard = Utils::squareToBitboard(sq);
@@ -946,7 +957,7 @@ void Board::loadFromFen(const std::string &fen) {
     }
   }
 
-  // 2. Parse active color (whose turn it is)
+  // 2. Parse active color
   std::getline(ss, token, ' ');
   whiteToMove = (token == "w");
 
@@ -969,6 +980,7 @@ void Board::loadFromFen(const std::string &fen) {
   setALLPiecesAggregate();
 }
 
+// Detects pieces that are pinned to the king
 u64 Board::getPinnedPieces(bool isWhite) {
   u64 pinned = 0ULL;
   u64 kingLoc = isWhite ? getWhiteKing() : getBlackKing();
@@ -977,7 +989,7 @@ u64 Board::getPinnedPieces(bool isWhite) {
   u64 ownPieces = isWhite ? getAllWhitePieces() : getAllBlackPieces();
   u64 enemyPieces = isWhite ? getAllBlackPieces() : getAllWhitePieces();
 
-  // Check diagonal sliders (bishops and queens)
+  // Check for pins from diagonal sliders (bishops and queens)
   u64 enemyDiagonalSliders = isWhite ? (getBlackBishops() | getBlackQueens())
                                      : (getWhiteBishops() | getWhiteQueens());
 
@@ -985,28 +997,24 @@ u64 Board::getPinnedPieces(bool isWhite) {
     Square attackerSq = Utils::popLSB(enemyDiagonalSliders);
     u64 attacker = Utils::squareToBitboard(attackerSq);
 
-    // Get all squares this slider can reach with no blockers
     u64 fullRay = validMoveBB::bishopMoves(attacker, 0ULL, 0ULL);
-
-    // If king is not on this ray, skip
     if ((fullRay & kingLoc) == 0)
       continue;
 
-    // Get squares between attacker and king
     u64 rayToKing = validMoveBB::bishopMoves(attacker, 0ULL, kingLoc);
     u64 rayFromKing = validMoveBB::bishopMoves(kingLoc, 0ULL, attacker);
     u64 betweenSquares = rayToKing & rayFromKing;
 
-    // Check pieces between attacker and king
     u64 piecesInBetween = betweenSquares & ownPieces;
 
-    // If exactly 1 of our pieces is between them, it's pinned
+    // If exactly one friendly piece is between the attacker and the king, it is
+    // pinned
     if (Utils::popcount(piecesInBetween) == 1) {
       pinned |= piecesInBetween;
     }
   }
 
-  // Check orthogonal sliders (rooks and queens)
+  // Check for pins from orthogonal sliders (rooks and queens)
   u64 enemyOrthogonalSliders = isWhite ? (getBlackRooks() | getBlackQueens())
                                        : (getWhiteRooks() | getWhiteQueens());
 
@@ -1032,6 +1040,7 @@ u64 Board::getPinnedPieces(bool isWhite) {
   return pinned;
 }
 
+// Initializes the Zobrist hash for the current board state
 void Board::initZobristHash() {
   zobristHash = 0ULL;
 

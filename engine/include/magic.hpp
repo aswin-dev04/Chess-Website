@@ -1,3 +1,9 @@
+/**
+ * @file magic.hpp
+ * @brief Defines the structures and functions for magic bitboard move
+ * generation. This file contains the pre-computed magic numbers, attack tables,
+ * and functions for generating sliding piece attacks (rooks and bishops).
+ */
 #ifndef MAGIC_HPP
 #define MAGIC_HPP
 
@@ -7,39 +13,38 @@
 using u64 = std::uint64_t;
 
 namespace Magic {
-// Pre-computed magic numbers (from Stockfish)
+// Pre-computed magic numbers for rooks and bishops
 extern const u64 rookMagics[64];
 extern const u64 bishopMagics[64];
 
-// Relevant occupancy masks (exclude edge squares)
+// Masks for relevant occupancy bits for each square
 extern u64 rookMasks[64];
 extern u64 bishopMasks[64];
 
-// Attack lookup tables
+// Lookup tables for rook and bishop attacks
 extern u64 rookAttacks[64][4096];
 extern u64 bishopAttacks[64][512];
 
-// Number of relevant occupancy bits per square
+// Number of relevant occupancy bits for each square
 extern const int rookBits[64];
 extern const int bishopBits[64];
 
-// Initialize tables (call once at startup)
+// Initializes the magic bitboard tables
 void initMagics();
 
-// Fast attack lookups
+// Generates rook attacks using magic bitboards
 inline u64 getRookAttacks(Square sq, u64 occupied) {
   occupied &= rookMasks[sq];
   occupied *= rookMagics[sq];
   occupied >>= (64 - rookBits[sq]);
-  // Cast to size_t to ensure proper array indexing
   return rookAttacks[sq][(std::size_t)occupied];
 }
 
+// Generates bishop attacks using magic bitboards
 inline u64 getBishopAttacks(Square sq, u64 occupied) {
   occupied &= bishopMasks[sq];
   occupied *= bishopMagics[sq];
   occupied >>= (64 - bishopBits[sq]);
-  // Cast to size_t to ensure proper array indexing
   return bishopAttacks[sq][(std::size_t)occupied];
 }
 } // namespace Magic

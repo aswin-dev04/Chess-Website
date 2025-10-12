@@ -5,7 +5,6 @@
 #include "../include/magic.hpp"
 #include "../include/movegen.hpp"
 #include "../include/utils.hpp"
-#include "../include/zobrist.hpp"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <map>
@@ -58,8 +57,7 @@ public:
     promotionToSquare = -1;
     setupPromotionDialog();
 
-    board = Board("k7/8/8/8/4R3/8/8/4K3 w KQkq - 0 1");
-
+    board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     loadTextures();
   }
 

@@ -1,8 +1,15 @@
+/**
+ * @file move.cpp
+ * @brief Implements the Move class.
+ * This file contains the implementation of the Move class, including methods
+ * for comparing and printing moves.
+ */
 #include "../include/move.hpp"
 #include <string>
 
+// Overloads the << operator to print a move in a human-readable format
 std::ostream &operator<<(std::ostream &os, const Move &move) {
-  // Convert squares to chess notation (a1, b2, etc.)
+  // Helper lambda to convert a square to a string in algebraic notation
   auto squareToString = [](Square sq) -> std::string {
     int file = sq % 8;
     int rank = sq / 8;
@@ -11,7 +18,7 @@ std::ostream &operator<<(std::ostream &os, const Move &move) {
     return std::string(1, fileChar) + std::string(1, rankChar);
   };
 
-  // Convert piece type to string
+  // Helper lambda to convert a piece type to a string
   auto pieceToString = [](PieceType piece) -> std::string {
     switch (piece) {
     case WHITE_PAWN:
@@ -45,7 +52,6 @@ std::ostream &operator<<(std::ostream &os, const Move &move) {
     }
   };
 
-  // Use getter methods instead of direct member access
   os << squareToString(move.getFromSquare()) << "->"
      << squareToString(move.getToSquare()) << " ["
      << pieceToString(move.getPieceType()) << "]";
@@ -65,6 +71,7 @@ std::ostream &operator<<(std::ostream &os, const Move &move) {
   return os;
 }
 
+// Overloads the == operator to compare two moves for equality
 bool Move::operator==(const Move &other) const {
   return fromSquare == other.fromSquare && toSquare == other.toSquare &&
          pieceType == other.pieceType && capturedPiece == other.capturedPiece &&
@@ -75,6 +82,7 @@ bool Move::operator==(const Move &other) const {
          isPromotion == other.isPromotion;
 }
 
+// Overloads the = operator to assign one move to another
 Move &Move::operator=(const Move &other) {
   if (this != &other) {
     fromSquare = other.fromSquare;

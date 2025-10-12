@@ -1,16 +1,28 @@
+/**
+ * @file evaluation.hpp
+ * @brief Defines the evaluation functions for the chess engine.
+ * This file contains the logic for evaluating a board position, including
+ * material balance, piece-square tables, and king safety.
+ */
 #ifndef EVALUATION_HPP
 #define EVALUATION_HPP
 #include "board.hpp"
 #include "utils.hpp"
 
 namespace Evaluation {
+// Main evaluation function that combines all evaluation components
 int evaluate(Board &board);
+// Calculates the material balance of the board
 int getMaterialScore(Board &board);
+// Evaluates the safety of the kings
 int getKingSafetyScore(Board &board);
-int getPieceSquareScore(Board &board);
+// Calculates the score based on piece positions
+int getPieceSquareScore(Board &dboard);
 
+// Material values for each piece type (Pawn, Knight, Bishop, Rook, Queen, King)
 inline const int materialValue[6] = {100, 300, 300, 500, 900, 0};
 
+// Piece-square tables for each piece type
 inline const int PAWN_TABLE[64] = {
     0,  0,  0,  0,   0,   0,  0,  0,  50, 50, 50,  50, 50, 50,  50, 50,
     10, 10, 20, 30,  30,  20, 10, 10, 5,  5,  10,  25, 25, 10,  5,  5,
@@ -57,6 +69,7 @@ inline const int KING_END_GAME_TABLE[64] = {
     -30, -30, -10, 20,  30,  30,  20,  -10, -30, -30, -30, 0,   0,
     0,   0,   -30, -30, -50, -30, -30, -30, -30, -30, -30, -50};
 
+// Array of pointers to the piece-square tables
 inline const int *pieceSquareTables[7]{
     PAWN_TABLE,  KNIGHT_TABLE,          BISHOP_TABLE,       ROOK_TABLE,
     QUEEN_TABLE, KING_EARLY_GAME_TABLE, KING_END_GAME_TABLE};

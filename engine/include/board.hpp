@@ -1,3 +1,10 @@
+/**
+ * @file board.hpp
+ * @brief Defines the Board class, which represents the chessboard and its
+ * state. This file contains the core data structures for the board
+ * representation, including bitboards for each piece type, and methods for
+ * making and undoing moves.
+ */
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
@@ -10,6 +17,7 @@
 
 using u64 = uint64_t;
 
+// Stores information needed to undo a move
 struct undoInfo {
   Move move;
   PieceType capturedPiece;
@@ -25,6 +33,7 @@ struct undoInfo {
 };
 class Board {
 private:
+  // Bitboards for each piece type and color
   u64 whitePawns;
   u64 whiteKnights;
   u64 whiteBishops;
@@ -37,13 +46,17 @@ private:
   u64 blackRooks;
   u64 blackQueens;
   u64 blackKing;
+
+  // Aggregate bitboards for all pieces of a color and all pieces on the board
   u64 allWhitePieces;
   u64 allBlackPieces;
   u64 allPieces;
 
-  std::vector<undoInfo> stateHistory;
-  std::vector<Move> moveHistory;
+  std::vector<undoInfo>
+      stateHistory;              // History of board states for undoing moves
+  std::vector<Move> moveHistory; // History of moves made
 
+  // Game state variables
   bool canWhiteCastleKS = true;
   bool canWhiteCastleQS = true;
   bool canBlackCastleKS = true;
@@ -54,8 +67,8 @@ private:
   bool hasWhiteCastled = false;
   bool hasBlackCastled = false;
 
-  static Zobrist zobrist;
-  u64 zobristHash;
+  static Zobrist zobrist; // Zobrist hashing keys
+  u64 zobristHash;        // Current board's Zobrist hash
 
 public:
   Board();
@@ -67,20 +80,25 @@ public:
 
   Board &operator=(const Board &other);
 
+  // Applies a move to the board
   void makeMove(const Move &move);
+  // Reverts the last move made
   void undoMove();
 
+  // Checks if the king of the specified color is in check
   bool isKingChecked(bool isWhite);
 
+  // Counts the number of pieces attacking the king
   int getAttackersCount(bool isWhite);
 
+  // Loads a board position from a FEN string
   void loadFromFen(const std::string &fen);
 
-  // methods for castling
+  // Castling availability checks
   bool canCastleKingSide(bool isWhite);
   bool canCastleQueenSide(bool isWhite);
 
-  // getters and setters for pawns
+  // --- Getters and Setters for piece bitboards ---
   inline u64 getWhitePawns() const { return whitePawns; }
   inline u64 getBlackPawns() const { return blackPawns; }
 
@@ -90,7 +108,6 @@ public:
   inline void setBlackPawns() { blackPawns = 0x00FF000000000000ULL; }
   inline void setBlackPawns(u64 value) { blackPawns = value; }
 
-  // getters and setters for knights
   inline u64 getWhiteKnights() const { return whiteKnights; }
   inline u64 getBlackKnights() const { return blackKnights; }
 
@@ -100,7 +117,6 @@ public:
   inline void setBlackKnights() { blackKnights = 0x4200000000000000ULL; }
   inline void setBlackKnights(u64 value) { blackKnights = value; }
 
-  // getters and setters for bishops
   inline u64 getWhiteBishops() const { return whiteBishops; }
   inline u64 getBlackBishops() const { return blackBishops; }
 
@@ -110,7 +126,6 @@ public:
   inline void setBlackBishops() { blackBishops = 0x2400000000000000ULL; }
   inline void setBlackBishops(u64 value) { blackBishops = value; }
 
-  // getters and setters for rooks
   inline u64 getWhiteRooks() const { return whiteRooks; }
   inline u64 getBlackRooks() const { return blackRooks; }
 
@@ -120,7 +135,6 @@ public:
   inline void setBlackRooks() { blackRooks = 0x8100000000000000ULL; }
   inline void setBlackRooks(u64 value) { blackRooks = value; }
 
-  // getters and setters for queens
   inline u64 getWhiteQueens() const { return whiteQueens; }
   inline u64 getBlackQueens() const { return blackQueens; }
 
@@ -130,7 +144,6 @@ public:
   inline void setBlackQueens() { blackQueens = 0x0800000000000000ULL; }
   inline void setBlackQueens(u64 value) { blackQueens = value; }
 
-  // getters and setters for kings
   inline u64 getWhiteKing() const { return whiteKing; }
   inline u64 getBlackKing() const { return blackKing; }
 
@@ -140,7 +153,7 @@ public:
   inline void setBlackKing() { blackKing = 0x1000000000000000ULL; }
   inline void setBlackKing(u64 value) { blackKing = value; }
 
-  // getters and setters for additional bitboards
+  // --- Getters and Setters for aggregate bitboards ---
   inline u64 getAllWhitePieces() const { return allWhitePieces; }
   inline u64 getAllBlackPieces() const { return allBlackPieces; }
 
@@ -156,6 +169,7 @@ public:
 
   inline u64 getAllPieces() const { return allPieces; }
   inline void setAllPieces() { allPieces = allWhitePieces | allBlackPieces; }
+  // Updates all aggregate bitboards
   inline void setALLPiecesAggregate() {
     setAllWhitePieces();
     setAllBlackPieces();
@@ -164,6 +178,7 @@ public:
 
   inline std::vector<Move> getMoveHistory() const { return moveHistory; }
 
+  // --- Getters for game state ---
   inline bool getCanWhiteCastleKS() const { return canWhiteCastleKS; }
   inline bool getCanWhiteCastleQS() const { return canWhiteCastleQS; }
   inline bool getCanBlackCastleKS() const { return canBlackCastleKS; }
@@ -173,8 +188,10 @@ public:
   inline bool getHasWhiteCastled() const { return hasWhiteCastled; }
   inline bool getHasBlackCastled() const { return hasBlackCastled; }
 
+  // Returns a bitboard of pieces that are pinned to the king
   u64 getPinnedPieces(bool isWhite);
   inline u64 getZobristHash() const { return zobristHash; }
+  // Initializes the Zobrist hash for the current board state
   void initZobristHash();
 };
 

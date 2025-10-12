@@ -1,7 +1,14 @@
+/**
+ * @file movegen.cpp
+ * @brief Implements the move generation functions for the chess engine.
+ * This file contains the implementation of the move generation logic, including
+ * pseudo-legal and legal move generation for all pieces.
+ */
 #include "../include/movegen.hpp"
 #include "../include/magic.hpp"
 #include "../include/utils.hpp"
 
+// Generates a bitboard of pseudo-legal king moves
 u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
 
   u64 clip_file_H = kingLoc & Tables::clearFile[7];
@@ -22,6 +29,7 @@ u64 validMoveBB::kingMoves(u64 kingLoc, u64 ownPieces) {
   return kingValid;
 }
 
+// Generates a list of pseudo-legal king moves
 std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
                                                     bool isWhite) {
 
@@ -60,6 +68,7 @@ std::vector<Move> MoveGeneration::generateKingMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of pseudo-legal knight moves
 u64 validMoveBB::knightMoves(u64 knightLoc, u64 ownPieces) {
 
   u64 clip_file_H = Tables::clearFile[7];
@@ -82,6 +91,7 @@ u64 validMoveBB::knightMoves(u64 knightLoc, u64 ownPieces) {
   return knightValid;
 }
 
+// Generates a list of pseudo-legal knight moves
 std::vector<Move> MoveGeneration::generateKnightMoves(Board &board,
                                                       bool isWhite) {
 
@@ -118,6 +128,7 @@ std::vector<Move> MoveGeneration::generateKnightMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of pseudo-legal white pawn moves
 u64 validMoveBB::whitePawnMoves(u64 whitePawns, u64 ownPieces, u64 allPieces,
                                 u64 enemyPieces) {
 
@@ -135,6 +146,7 @@ u64 validMoveBB::whitePawnMoves(u64 whitePawns, u64 ownPieces, u64 allPieces,
   return validMoves | validAttacks;
 }
 
+// Generates a bitboard of pseudo-legal black pawn moves
 u64 validMoveBB::blackPawnMoves(u64 blackPawns, u64 ownPieces, u64 allPieces,
                                 u64 enemyPieces) {
 
@@ -152,6 +164,7 @@ u64 validMoveBB::blackPawnMoves(u64 blackPawns, u64 ownPieces, u64 allPieces,
   return validMoves | validAttacks;
 }
 
+// Generates a list of pseudo-legal pawn promotion moves
 std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
                                                              u64 pawnLoc,
                                                              bool isWhite) {
@@ -211,6 +224,7 @@ std::vector<Move> MoveGeneration::generatePawnPromotionMoves(Board &board,
   return promotionMoves;
 }
 
+// Generates a list of pseudo-legal en passant moves
 std::vector<Move> MoveGeneration::generateEnPassantMoves(Board &board,
                                                          bool isWhite) {
   std::vector<Move> enPassantMoves;
@@ -258,6 +272,7 @@ std::vector<Move> MoveGeneration::generateEnPassantMoves(Board &board,
   return enPassantMoves;
 }
 
+// Generates a list of pseudo-legal pawn moves
 std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
                                                     bool isWhite) {
 
@@ -312,6 +327,7 @@ std::vector<Move> MoveGeneration::generatePawnMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of white pawn attacks
 u64 validMoveBB::whitePawnAttacks(u64 pawnLoc) {
   u64 attacks = 0ULL;
   attacks |= (pawnLoc & Tables::clearFile[0]) << 7;
@@ -320,6 +336,7 @@ u64 validMoveBB::whitePawnAttacks(u64 pawnLoc) {
   return attacks;
 }
 
+// Generates a bitboard of black pawn attacks
 u64 validMoveBB::blackPawnAttacks(u64 pawnLoc) {
   u64 attacks = 0ULL;
   // Left attacks (southwest)
@@ -329,6 +346,7 @@ u64 validMoveBB::blackPawnAttacks(u64 pawnLoc) {
   return attacks;
 }
 
+// Generates a bitboard of all squares attacked by the enemy
 u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
   u64 enemyAttacks = 0ULL;
   u64 ownPieces =
@@ -353,21 +371,21 @@ u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
   // Knights
   enemyAttacks |= validMoveBB::knightMoves(enemyKnights, enemyPieces);
 
-  // Bishops - optimized to use Square directly
+  // Bishops
   u64 bishops = enemyBishops;
   while (bishops) {
     Square bishopSq = Utils::popLSB(bishops);
     enemyAttacks |= Magic::getBishopAttacks(bishopSq, allPieces);
   }
 
-  // Rooks - optimized to use Square directly
+  // Rooks
   u64 rooks = enemyRooks;
   while (rooks) {
     Square rookSq = Utils::popLSB(rooks);
     enemyAttacks |= Magic::getRookAttacks(rookSq, allPieces);
   }
 
-  // Queens - bishops + rooks
+  // Queens
   u64 queens = enemyQueens;
   while (queens) {
     Square queenSq = Utils::popLSB(queens);
@@ -381,6 +399,7 @@ u64 validMoveBB::allEnemyAttacks(Board &board, bool isWhite) {
   return enemyAttacks;
 }
 
+// Generates a bitboard of pseudo-legal rook moves
 u64 validMoveBB::rookMoves(u64 rookLoc, u64 ownPieces, u64 enemyPieces) {
 
   if (rookLoc == 0ULL)
@@ -392,6 +411,7 @@ u64 validMoveBB::rookMoves(u64 rookLoc, u64 ownPieces, u64 enemyPieces) {
   return Magic::getRookAttacks(sq, occupied) & ~ownPieces;
 }
 
+// Generates a list of pseudo-legal rook moves
 std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
                                                     bool isWhite) {
 
@@ -427,6 +447,7 @@ std::vector<Move> MoveGeneration::generateRookMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of pseudo-legal bishop moves
 u64 validMoveBB::bishopMoves(u64 bishopLoc, u64 ownPieces, u64 enemyPieces) {
 
   if (bishopLoc == 0ULL)
@@ -438,6 +459,7 @@ u64 validMoveBB::bishopMoves(u64 bishopLoc, u64 ownPieces, u64 enemyPieces) {
   return Magic::getBishopAttacks(sq, occupied) & ~ownPieces;
 }
 
+// Generates a list of pseudo-legal bishop moves
 std::vector<Move> MoveGeneration::generateBishopMoves(Board &board,
                                                       bool isWhite) {
   std::vector<Move> moves;
@@ -474,11 +496,13 @@ std::vector<Move> MoveGeneration::generateBishopMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of pseudo-legal queen moves
 u64 validMoveBB::queenMoves(u64 queenLoc, u64 ownPieces, u64 enemyPieces) {
   return validMoveBB::bishopMoves(queenLoc, ownPieces, enemyPieces) |
          validMoveBB::rookMoves(queenLoc, ownPieces, enemyPieces);
 }
 
+// Generates a list of pseudo-legal queen moves
 std::vector<Move> MoveGeneration::generateQueenMoves(Board &board,
                                                      bool isWhite) {
   std::vector<Move> moves;
@@ -514,6 +538,7 @@ std::vector<Move> MoveGeneration::generateQueenMoves(Board &board,
   return moves;
 }
 
+// Generates a bitboard of legal king moves
 u64 validMoveBB::kingLegalMoves(Board &board, bool isWhite) {
 
   // relevant bitboards
@@ -527,6 +552,7 @@ u64 validMoveBB::kingLegalMoves(Board &board, bool isWhite) {
   return legalMoves;
 }
 
+// Generates a list of legal king moves
 std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
                                                          bool isWhite) {
 
@@ -547,6 +573,7 @@ std::vector<Move> MoveGeneration::generateKingLegalMoves(Board &board,
   return legalKingMoves;
 }
 
+// Generates a list of legal pawn moves
 std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board &board,
                                                          bool isWhite,
                                                          bool inCheck,
@@ -576,6 +603,7 @@ std::vector<Move> MoveGeneration::generatePawnLegalMoves(Board &board,
   return legal;
 }
 
+// Generates a list of legal knight moves
 std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,
                                                            bool isWhite,
                                                            bool inCheck,
@@ -611,6 +639,7 @@ std::vector<Move> MoveGeneration::generateKnightLegalMoves(Board &board,
 
   return legal;
 }
+// Generates a list of legal bishop moves
 std::vector<Move> MoveGeneration::generateBishopLegalMoves(Board &board,
                                                            bool isWhite,
                                                            bool inCheck,
@@ -643,6 +672,7 @@ std::vector<Move> MoveGeneration::generateBishopLegalMoves(Board &board,
   return legal;
 }
 
+// Generates a list of legal rook moves
 std::vector<Move> MoveGeneration::generateRookLegalMoves(Board &board,
                                                          bool isWhite,
                                                          bool inCheck,
@@ -675,6 +705,7 @@ std::vector<Move> MoveGeneration::generateRookLegalMoves(Board &board,
   return legal;
 }
 
+// Generates a list of legal queen moves
 std::vector<Move> MoveGeneration::generateQueenLegalMoves(Board &board,
                                                           bool isWhite,
                                                           bool inCheck,
@@ -707,6 +738,7 @@ std::vector<Move> MoveGeneration::generateQueenLegalMoves(Board &board,
   return legal;
 }
 
+// Generates all legal moves for the current player
 std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
   std::vector<Move> allMoves;
 
@@ -740,6 +772,7 @@ std::vector<Move> MoveGeneration::generateAllMoves(Board &board, bool isWhite) {
 
   return allMoves;
 }
+// Filters a list of moves to only include legal moves while in check
 std::vector<Move>
 MoveGeneration::generateLegalMovesWhileInCheck(Board &board, bool isWhite,
                                                std::vector<Move> allMoves) {
@@ -756,6 +789,7 @@ MoveGeneration::generateLegalMovesWhileInCheck(Board &board, bool isWhite,
   return legalMoves;
 }
 
+// Generates a list of legal castling moves
 std::vector<Move> MoveGeneration::generateCastlingMoves(Board &board,
                                                         bool isWhite) {
 
@@ -783,6 +817,7 @@ std::vector<Move> MoveGeneration::generateCastlingMoves(Board &board,
   return castlingMoves;
 }
 
+// Generates a list of all possible captures
 std::vector<Move> MoveGeneration::generateCaptures(Board &board, bool isWhite) {
   std::vector<Move> captures;
 

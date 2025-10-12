@@ -1,3 +1,9 @@
+/**
+ * @file ai.cpp
+ * @brief Implements the chess AI logic.
+ * This file contains the implementation of the minimax algorithm with
+ * alpha-beta pruning, quiescence search, and other AI-related functionalities.
+ */
 #include "../include/ai.hpp"
 #include "../include/evaluation.hpp"
 #include "../include/moveorder.hpp"
@@ -5,6 +11,7 @@
 #include <chrono>
 #include <limits.h>
 
+// --- Debugging and performance counters ---
 int nodesSearched = 0;
 int ttHits = 0;
 int qNodes = 0;
@@ -16,6 +23,7 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
   u64 hash = board.getZobristHash();
   int originalAlpha = alpha;
 
+  // Probe the transposition table
   int ttScore;
   Move ttMove;
   if (tt.probe(hash, depth, alpha, beta, ttScore, ttMove)) {
@@ -23,12 +31,15 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     return ttScore;
   }
 
+  // Base case: if depth is 0, start quiescence search
   if (depth == 0) {
     return quiescence(board, alpha, beta, maximizingPlayer, 0);
   }
 
+  // Get moves, ordered to improve alpha-beta pruning
   std::vector<Move> moves = MoveOrder::getOrderedMoves(board);
 
+  // If a move was found in the TT, try it first
   if (ttMove.getFromSquare() != ttMove.getToSquare()) {
     auto it = std::find(moves.begin(), moves.end(), ttMove);
     if (it != moves.end()) {
@@ -37,22 +48,22 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     }
   }
 
+  // Handle checkmate and stalemate
   if (moves.empty()) {
     bool currentPlayerTurn = board.getWhiteToMove();
     bool currentPlayerInCheck = board.isKingChecked(currentPlayerTurn);
     if (currentPlayerInCheck && maximizingPlayer)
-      return INT_MIN + depth;
+      return INT_MIN + depth; // Checkmated
     else if (currentPlayerInCheck && !maximizingPlayer)
-      return INT_MAX - depth;
+      return INT_MAX - depth; // Checkmated
     else
-      return 0;
+      return 0; // Stalemate
   }
 
   Move bestMove = moves[0];
 
   if (maximizingPlayer) {
     int maxEval = INT_MIN;
-
     for (Move &move : moves) {
       board.makeMove(move);
       int eval = minimax(board, depth - 1, alpha, beta, false);
@@ -65,10 +76,11 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
 
       alpha = std::max((long long int)alpha, (long long int)eval);
       if (beta <= alpha) {
-        break;
+        break; // Beta cutoff
       }
     }
 
+    // Store the result in the transposition table
     TTFlag flag;
     if (maxEval <= originalAlpha) {
       flag = TT_ALPHA;
@@ -77,13 +89,11 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     } else {
       flag = TT_EXACT;
     }
-
     tt.store(hash, depth, maxEval, flag, bestMove);
     return maxEval;
 
-  } else {
+  } else { // Minimizing player
     int minEval = INT_MAX;
-
     for (Move &move : moves) {
       board.makeMove(move);
       int eval = minimax(board, depth - 1, alpha, beta, true);
@@ -96,10 +106,11 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
 
       beta = std::min((long long int)beta, (long long int)eval);
       if (beta <= alpha) {
-        break;
+        break; // Alpha cutoff
       }
     }
 
+    // Store the result in the transposition table
     TTFlag flag;
     if (minEval >= beta) {
       flag = TT_ALPHA;
@@ -108,12 +119,12 @@ int ChessAI::minimax(Board &board, int depth, long long int alpha,
     } else {
       flag = TT_EXACT;
     }
-
     tt.store(hash, depth, minEval, flag, bestMove);
     return minEval;
   }
 }
 
+// Iterative deepening search for the best move
 Move ChessAI::getBestMove(Board &board, int maxDepth) {
   nodesSearched = 0;
   ttHits = 0;
@@ -124,9 +135,9 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
   if (moves.empty())
     return Move();
 
+  // Check transposition table for a pre-existing best move
   u64 hash = board.getZobristHash();
   Move ttMove = tt.getBestMove(hash);
-
   if (ttMove.getFromSquare() != ttMove.getToSquare()) {
     auto it = std::find(moves.begin(), moves.end(), ttMove);
     if (it != moves.end()) {
@@ -137,6 +148,7 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
 
   Move bestMove = moves[0];
 
+  // Iteratively deepen the search, starting from depth 1
   for (int currentDepth = 1; currentDepth <= maxDepth; currentDepth++) {
     int bestScore = INT_MIN;
     Move currentBestMove = moves[0];
@@ -154,6 +166,7 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
 
     bestMove = currentBestMove;
 
+    // Move the best move to the front of the list for the next iteration
     auto it = std::find(moves.begin(), moves.end(), bestMove);
     if (it != moves.end()) {
       moves.erase(it);
@@ -165,6 +178,7 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
+  // Print search statistics
   std::cout << "Nodes: " << nodesSearched << std::endl;
   std::cout << "TT Hits: " << ttHits << " (" << (100.0 * ttHits / nodesSearched)
             << "%)" << std::endl;
@@ -177,6 +191,7 @@ Move ChessAI::getBestMove(Board &board, int maxDepth) {
 
 Move ChessAI::getBestMove(Board &board) { return getBestMove(board, 6); }
 
+// Quiescence search to evaluate only "quiet" positions
 int ChessAI::quiescence(Board &board, int alpha, int beta,
                         bool maximizingPlayer, int qDepth) {
 
@@ -184,6 +199,7 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
 
   const int MAX_Q_DEPTH = 4;
 
+  // The "stand-pat" score, assuming no more tactical moves are made
   int standPat = Evaluation::evaluate(board);
 
   if (qDepth >= MAX_Q_DEPTH) {
@@ -206,6 +222,7 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
     }
   }
 
+  // Generate only tactical moves (captures and promotions)
   std::vector<Move> tacticalMoves = generateTacticalMoves(board);
 
   if (tacticalMoves.empty()) {
@@ -213,6 +230,7 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
   }
   MoveOrder::orderCaptures(tacticalMoves);
 
+  // Delta pruning: if a capture can't raise the score enough, prune it
   const int DELTA = 900;
   if (maximizingPlayer && standPat + DELTA < alpha) {
     return standPat;
@@ -223,7 +241,6 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
 
   if (maximizingPlayer) {
     int maxEval = standPat;
-
     for (Move &move : tacticalMoves) {
       board.makeMove(move);
       int eval = quiescence(board, alpha, beta, false, qDepth + 1);
@@ -236,11 +253,9 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
         break;
       }
     }
-
     return maxEval;
   } else {
     int minEval = standPat;
-
     for (Move &move : tacticalMoves) {
       board.makeMove(move);
       int eval = quiescence(board, alpha, beta, true, qDepth + 1);
@@ -253,16 +268,17 @@ int ChessAI::quiescence(Board &board, int alpha, int beta,
         break;
       }
     }
-
     return minEval;
   }
 }
 
+// Generates tactical moves (captures and promotions) for the quiescence search
 std::vector<Move> ChessAI::generateTacticalMoves(Board &board) {
   bool isWhite = board.getWhiteToMove();
 
   std::vector<Move> tactical = MoveGeneration::generateCaptures(board, isWhite);
 
+  // Add pawn promotions to the list of tactical moves
   u64 pawns = isWhite ? board.getWhitePawns() : board.getBlackPawns();
   u64 promoPawns =
       isWhite ? pawns & Tables::maskRank[6] : pawns & Tables::maskRank[1];
@@ -273,8 +289,8 @@ std::vector<Move> ChessAI::generateTacticalMoves(Board &board) {
     tactical.insert(tactical.end(), promos.begin(), promos.end());
   }
 
+  // Filter out illegal tactical moves
   std::vector<Move> legalTacticalMoves;
-
   for (Move &move : tactical) {
     board.makeMove(move);
     if (!board.isKingChecked(isWhite)) {

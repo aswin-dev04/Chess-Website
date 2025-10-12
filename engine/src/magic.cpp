@@ -1,9 +1,16 @@
+/**
+ * @file magic.cpp
+ * @brief Implements magic bitboard move generation.
+ * This file contains the implementation of magic bitboards for efficient
+ * generation of sliding piece attacks (rooks and bishops).
+ */
 #include "../include/magic.hpp"
 #include "../include/utils.hpp"
 
 namespace Magic {
 
-// Pre-computed magic numbers that create perfect hash functions
+// Pre-computed magic numbers for generating perfect hash functions for rook and
+// bishop attacks
 const u64 rookMagics[64] = {
     0x8a80104000800020ULL, 0x140002000100040ULL,  0x2801880a0017001ULL,
     0x100081001000420ULL,  0x200020010080420ULL,  0x3001c0002010008ULL,
@@ -52,7 +59,7 @@ const u64 bishopMagics[64] = {
     0x28000010020204ULL,   0x6000020202d0240ULL,  0x8918844842082200ULL,
     0x4010011029020020ULL};
 
-// Number of relevant bits (determines table size)
+// Number of relevant bits in the occupancy mask for each square
 const int rookBits[64] = {12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10,
                           10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10,
                           10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10,
@@ -64,89 +71,69 @@ const int bishopBits[64] = {6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5,
                             5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5,
                             5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6};
 
+// Occupancy masks and attack tables for rooks and bishops
 u64 rookMasks[64];
 u64 bishopMasks[64];
 u64 rookAttacks[64][4096];
 u64 bishopAttacks[64][512];
 
-// Generate occupancy mask for rook (exclude board edges)
+// Generates the occupancy mask for a rook on a given square
 u64 maskRookOccupancy(Square sq) {
   u64 mask = 0ULL;
   int rank = sq / 8;
   int file = sq % 8;
 
-  // North - stop before rank 7
   for (int r = rank + 1; r <= 6; r++)
     mask |= (1ULL << (r * 8 + file));
-
-  // South - stop after rank 1
   for (int r = rank - 1; r >= 1; r--)
     mask |= (1ULL << (r * 8 + file));
-
-  // East - stop before file H
   for (int f = file + 1; f <= 6; f++)
     mask |= (1ULL << (rank * 8 + f));
-
-  // West - stop after file A
   for (int f = file - 1; f >= 1; f--)
     mask |= (1ULL << (rank * 8 + f));
 
   return mask;
 }
 
-// Generate occupancy mask for bishop (exclude board edges)
+// Generates the occupancy mask for a bishop on a given square
 u64 maskBishopOccupancy(Square sq) {
   u64 mask = 0ULL;
   int rank = sq / 8;
   int file = sq % 8;
 
-  // Northeast
   for (int r = rank + 1, f = file + 1; r <= 6 && f <= 6; r++, f++)
     mask |= (1ULL << (r * 8 + f));
-
-  // Northwest
   for (int r = rank + 1, f = file - 1; r <= 6 && f >= 1; r++, f--)
     mask |= (1ULL << (r * 8 + f));
-
-  // Southeast
   for (int r = rank - 1, f = file + 1; r >= 1 && f <= 6; r--, f++)
     mask |= (1ULL << (r * 8 + f));
-
-  // Southwest
   for (int r = rank - 1, f = file - 1; r >= 1 && f >= 1; r--, f--)
     mask |= (1ULL << (r * 8 + f));
 
   return mask;
 }
 
-// Generate rook attacks for specific blocker configuration
+// Generates rook attacks on the fly for a given blocker configuration
 u64 rookAttacksOnTheFly(Square sq, u64 blockers) {
   u64 attacks = 0ULL;
   int rank = sq / 8;
   int file = sq % 8;
 
-  // North
   for (int r = rank + 1; r <= 7; r++) {
     attacks |= (1ULL << (r * 8 + file));
     if (blockers & (1ULL << (r * 8 + file)))
       break;
   }
-
-  // South
   for (int r = rank - 1; r >= 0; r--) {
     attacks |= (1ULL << (r * 8 + file));
     if (blockers & (1ULL << (r * 8 + file)))
       break;
   }
-
-  // East
   for (int f = file + 1; f <= 7; f++) {
     attacks |= (1ULL << (rank * 8 + f));
     if (blockers & (1ULL << (rank * 8 + f)))
       break;
   }
-
-  // West
   for (int f = file - 1; f >= 0; f--) {
     attacks |= (1ULL << (rank * 8 + f));
     if (blockers & (1ULL << (rank * 8 + f)))
@@ -156,34 +143,27 @@ u64 rookAttacksOnTheFly(Square sq, u64 blockers) {
   return attacks;
 }
 
-// Generate bishop attacks for specific blocker configuration
+// Generates bishop attacks on the fly for a given blocker configuration
 u64 bishopAttacksOnTheFly(Square sq, u64 blockers) {
   u64 attacks = 0ULL;
   int rank = sq / 8;
   int file = sq % 8;
 
-  // Northeast
   for (int r = rank + 1, f = file + 1; r <= 7 && f <= 7; r++, f++) {
     attacks |= (1ULL << (r * 8 + f));
     if (blockers & (1ULL << (r * 8 + f)))
       break;
   }
-
-  // Northwest
   for (int r = rank + 1, f = file - 1; r <= 7 && f >= 0; r++, f--) {
     attacks |= (1ULL << (r * 8 + f));
     if (blockers & (1ULL << (r * 8 + f)))
       break;
   }
-
-  // Southeast
   for (int r = rank - 1, f = file + 1; r >= 0 && f <= 7; r--, f++) {
     attacks |= (1ULL << (r * 8 + f));
     if (blockers & (1ULL << (r * 8 + f)))
       break;
   }
-
-  // Southwest
   for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
     attacks |= (1ULL << (r * 8 + f));
     if (blockers & (1ULL << (r * 8 + f)))
@@ -193,18 +173,14 @@ u64 bishopAttacksOnTheFly(Square sq, u64 blockers) {
   return attacks;
 }
 
-// Set occupancy bits based on index (generates all 2^n blocker patterns)
+// Generates all possible blocker configurations for a given attack mask
 u64 setOccupancy(int index, int bitsInMask, u64 attackMask) {
   u64 occupancy = 0ULL;
 
   for (int count = 0; count < bitsInMask; count++) {
-    // Get LS1B
     int square = __builtin_ctzll(attackMask);
-
-    // Pop LS1B
     attackMask &= attackMask - 1;
 
-    // If bit is set in index, set it in occupancy
     if (index & (1ULL << count)) {
       occupancy |= (1ULL << square);
     }
@@ -213,36 +189,28 @@ u64 setOccupancy(int index, int bitsInMask, u64 attackMask) {
   return occupancy;
 }
 
+// Initializes the magic bitboard tables for rooks and bishops
 void initMagics() {
-  // Initialize rook attacks
   for (int sq = 0; sq < 64; sq++) {
     rookMasks[sq] = maskRookOccupancy((Square)sq);
-
     int relevantBits = rookBits[sq];
     int occupancyIndices = (1 << relevantBits);
 
     for (int index = 0; index < occupancyIndices; index++) {
       u64 occupancy = setOccupancy(index, relevantBits, rookMasks[sq]);
-
-      // Apply magic formula: (occupancy * magic) >> (64 - bits)
       int magicIndex = (occupancy * rookMagics[sq]) >> (64 - relevantBits);
-
       rookAttacks[sq][magicIndex] = rookAttacksOnTheFly((Square)sq, occupancy);
     }
   }
 
-  // Initialize bishop attacks
   for (int sq = 0; sq < 64; sq++) {
     bishopMasks[sq] = maskBishopOccupancy((Square)sq);
-
     int relevantBits = bishopBits[sq];
     int occupancyIndices = (1 << relevantBits);
 
     for (int index = 0; index < occupancyIndices; index++) {
       u64 occupancy = setOccupancy(index, relevantBits, bishopMasks[sq]);
-
       int magicIndex = (occupancy * bishopMagics[sq]) >> (64 - relevantBits);
-
       bishopAttacks[sq][magicIndex] =
           bishopAttacksOnTheFly((Square)sq, occupancy);
     }

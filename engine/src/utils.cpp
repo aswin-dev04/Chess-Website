@@ -1,6 +1,13 @@
+/**
+ * @file utils.cpp
+ * @brief Implements utility functions for the chess engine.
+ * This file contains the implementation of various helper functions for
+ * bitboard manipulation, square conversions, and other common tasks.
+ */
 #include "../include/utils.hpp"
 #include "../include/movegen.hpp"
 
+// Calculates the number of captures a given piece type can make
 int Utils::getCaptureCount(Board &board, PieceType pieceType, bool isWhite) {
 
   int captureCount = 0;
@@ -140,6 +147,7 @@ int Utils::getCaptureCount(Board &board, PieceType pieceType, bool isWhite) {
   return captureCount;
 }
 
+// Converts a string in algebraic notation (e.g., "e4") to a square index
 Square Utils::stringToSquare(const std::string &square) {
   if (square.length() != 2)
     return SQ_NONE;
@@ -154,6 +162,7 @@ Square Utils::stringToSquare(const std::string &square) {
   return static_cast<Square>(rank * 8 + file);
 }
 
+// Converts a character (e.g., 'P', 'n') to a piece type
 PieceType Utils::charToPiece(char c) {
   switch (c) {
   case 'P':
@@ -185,6 +194,7 @@ PieceType Utils::charToPiece(char c) {
   }
 }
 
+// Counts the number of pieces of a given type on the board
 int Utils::getPieceCount(Board &board, PieceType pieceType) {
   switch (pieceType) {
   case WHITE_PAWN:
@@ -216,6 +226,7 @@ int Utils::getPieceCount(Board &board, PieceType pieceType) {
   }
 }
 
+// Returns the type of piece at a given square
 PieceType Utils::getPieceTypeAt(Board &board, Square square) {
   u64 squareBB = squareToBitboard(square);
 
